@@ -1,0 +1,10 @@
+#botWidgetBtn{position:fixed;right:20px;bottom:20px;z-index:99999;padding:12px 14px;border-radius:999px;border:0;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,.15);background:#111;color:#fff}
+#botWidgetBox{position:fixed;right:20px;bottom:75px;width:320px;max-height:420px;z-index:99999;border-radius:14px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.18);background:#fff;font-family:Inter,Arial,sans-serif;display:none}
+#botWidgetHeader{padding:10px 12px;background:#111;color:#fff;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+#botWidgetMsgs{padding:10px 12px;gap:8px;display:flex;flex-direction:column;overflow:auto;max-height:300px}
+.botMsg{padding:8px 10px;border-radius:10px;max-width:85%;font-size:14px;line-height:1.35}
+.botUser{margin-left:auto;background:#e9eefc}
+.botBot{margin-right:auto;background:#f3f4f6}
+#botWidgetForm{display:flex;gap:8px;padding:10px;border-top:1px solid #eee}
+#botWidgetInput{flex:1;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:14px}
+#botWidgetSend{padding:10px 12px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer}
