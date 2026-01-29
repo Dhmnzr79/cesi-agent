@@ -56,12 +56,91 @@ document.addEventListener("DOMContentLoaded", () => {
   const send = box.querySelector("#botWidgetSend");
   const close = box.querySelector("#botWidgetClose");
 
+  // Состояние виджета
+  const widgetState = {
+    currentStage: 'discovery' // синхронизируется с meta.stage
+  };
+
   function addMsg(text, who) {
     const d = document.createElement("div");
     d.className = `botMsg ${who === "user" ? "botUser" : "botBot"}`;
     d.textContent = text;
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // Парсинг ответа от Flowise
+  function parseFlowiseResponse(data) {
+    try {
+      // Пытаемся распарсить как JSON
+      if (typeof data === 'string') {
+        data = JSON.parse(data);
+      }
+      
+      // Проверяем структуру
+      if (data && typeof data === 'object') {
+        return {
+          answer: data.answer || data.text || '',
+          meta: {
+            stage: data.meta?.stage || 'discovery'
+          },
+          flags: {
+            emotional: data.flags?.emotional || false
+          },
+          isValid: true
+        };
+      }
+    } catch (e) {
+      // Если не JSON, возвращаем как обычный текст
+    }
+    
+    // Fallback: обычный текст
+    const text = typeof data === 'string' ? data : (data?.text || data?.answer || JSON.stringify(data));
+    return {
+      answer: text,
+      meta: { stage: widgetState.currentStage },
+      flags: { emotional: false },
+      isValid: false
+    };
+  }
+
+  // Отображение ответа бота
+  function renderAnswer(answer) {
+    addMsg(answer, "bot");
+  }
+
+  // Отображение кнопки CTA
+  function renderCTAButton() {
+    // Удаляем предыдущую кнопку если есть
+    const existingCTA = msgs.querySelector(".botCTAButton");
+    if (existingCTA) {
+      existingCTA.parentElement.remove();
+    }
+
+    const ctaBtn = document.createElement("button");
+    ctaBtn.className = "botCTAButton";
+    ctaBtn.textContent = "Хочу записаться";
+    ctaBtn.style.cssText = "margin: 8px 0; padding: 10px 16px; background: #4ECDC4; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;";
+    
+    ctaBtn.onclick = () => {
+      ctaBtn.parentElement.remove();
+      onCTAClick();
+    };
+
+    const msgContainer = document.createElement("div");
+    msgContainer.style.cssText = "display: flex; flex-direction: column; align-items: flex-start;";
+    msgContainer.appendChild(ctaBtn);
+    msgs.appendChild(msgContainer);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // Обработчик клика на кнопку CTA
+  function onCTAClick() {
+    // Отправляем сообщение в чат, а не открываем форму
+    const text = "Хочу записаться";
+    input.value = "";
+    addMsg(text, "user");
+    askFlowise(text);
   }
 
   btn.onclick = () => {
@@ -90,8 +169,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const data = await res.json();
 
-    // Flowise может возвращать разные поля, пробуем самые частые
-    return data.text || data.answer || data.response || (typeof data === "string" ? data : JSON.stringify(data));
+    // Парсим ответ от Flowise
+    const parsed = parseFlowiseResponse(data);
+    
+    // Обновляем состояние
+    widgetState.currentStage = parsed.meta.stage;
+    
+    // Отображаем ответ
+    renderAnswer(parsed.answer);
+    
+    // Показываем кнопку CTA если нужно
+    if (parsed.isValid && parsed.meta.stage === 'ready' && parsed.flags.emotional === false) {
+      renderCTAButton();
+    }
   }
 
   async function onSend() {
@@ -101,8 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addMsg(text, "user");
 
     try {
-      const reply = await askFlowise(text);
-      addMsg(reply, "bot");
+      await askFlowise(text);
     } catch (e) {
       addMsg("Не получилось связаться с мозгом. Сейчас проверим endpoint / доступ.", "bot");
       addMsg(String(e.message || e), "bot");
