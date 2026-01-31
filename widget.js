@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  // Парсинг ответа от Flowise
+  // Парсинг ответа от Flowise (плоская структура: ui_ctaIntent, meta_stage и т.д.)
   function parseFlowiseResponse(data) {
     try {
       // Пытаемся распарсить как JSON
@@ -77,16 +77,21 @@ document.addEventListener("DOMContentLoaded", () => {
         data = JSON.parse(data);
       }
       
-      // Проверяем структуру
+      // Проверяем структуру (поддержка плоской и вложенной)
       if (data && typeof data === 'object') {
         return {
           answer: data.answer || data.text || '',
+          ui: {
+            ctaIntent: data.ui_ctaIntent ?? data.ui?.ctaIntent ?? 'none'
+          },
           meta: {
-            stage: data.meta?.stage || 'discovery'
+            stage: data.meta_stage ?? data.meta?.stage ?? 'discovery',
+            confidence: data.meta_confidence ?? data.meta?.confidence ?? 0
           },
           flags: {
-            emotional: data.flags?.emotional || false
+            emotional: data.flags_emotional ?? data.flags?.emotional ?? false
           },
+          leadIntent: data.leadIntent ?? 'none',
           isValid: true
         };
       }
@@ -98,8 +103,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const text = typeof data === 'string' ? data : (data?.text || data?.answer || JSON.stringify(data));
     return {
       answer: text,
-      meta: { stage: widgetState.currentStage },
+      ui: { ctaIntent: 'none' },
+      meta: { stage: widgetState.currentStage, confidence: 0 },
       flags: { emotional: false },
+      leadIntent: 'none',
       isValid: false
     };
   }
@@ -179,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAnswer(parsed.answer);
     
     // Показываем кнопку CTA если нужно
-    if (parsed.isValid && parsed.meta.stage === 'ready' && parsed.flags.emotional === false) {
+    if (parsed.isValid && parsed.ui.ctaIntent === 'booking' && parsed.meta.stage === 'ready' && parsed.flags.emotional === false) {
       renderCTAButton();
     }
   }
