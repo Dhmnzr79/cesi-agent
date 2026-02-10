@@ -21,7 +21,7 @@
 
 ## 2. Structured Output — принятая схема
 
-Используется **Structured Output (JSON)** как стандарт взаимодействия между Flowise и фронтом.  
+Используется **Structured Output (JSON)** как стандарт взаимодействия между LLM (в Flowise) и фронтом.  
 Схема соответствует best practices conversational AI **2025–2026**.
 
 **P0 vs P1+:** В P0 используется минимальная схема (см. [`prompt.md`](prompt.md) §14): `answer`, `ui.ctaIntent`, `meta.stage`, `meta.confidence`, `flags.emotional`. Расширенные поля ниже (`showCTA`, `ctaText`, `ctaTiming`, `meta.intent`, `shouldHandoff`, `flags.isOffTopic`, `isFlood`, `needsEmpathy`) — P1+.
@@ -414,9 +414,7 @@ renderCTA() (или нет) / checkPendingCTA()
    GPT анализирует диалог и рекомендует тип CTA через `ctaIntent`.
 
 2. **Фронт — контролёр, диспетчер и финальный арбитр**  
-   Фронт проверяет все условия и принимает финальное решение.
-
-3. **CTA ≠ форма**  
+   Фронт проверяет все условия и принимает финальное решение.3. **CTA ≠ форма**  
    CTA — это предложение шага, форма — отдельный `dialogState`.4. **CTA не бинарен**  
    Есть разные типы CTA по `ctaIntent`, не все ведут к форме.5. **Отложенное решение**  
    Если CTA не может быть показан сейчас, он сохраняется и может быть использован позже.6. **Confidence ≠ готовность**  

@@ -72,6 +72,8 @@ Flowise используется **только как мозг бота** (ло
 - системный промпт
 - RAG на базе markdown-файлов (опционально с векторной БД `chroma`)
 
+Детальная структура AgentFlow V2, список нод и принципы настройки описаны в `flowise.md`. Мы работаем в **AgentFlow V2**, не в Chatflow; все ноды и правила — только из AgentFlow V2.
+
 **Доступ:**
 - Доступ к Flowise осуществляется по HTTPS через nginx (reverse proxy)
 - Встроенный Flowise-виджет **не используется**
@@ -132,7 +134,7 @@ nginx выполняет **две критические роли**:
 
 Используется для:
 - UI Flowise
-- chatflow
+- AgentFlow V2 (поток бота; не Chatflow)
 - сообщений бота
 - авторизации
 
@@ -159,6 +161,14 @@ nginx выполняет **две критические роли**:
 
 - Единственная публичная точка заявок
 - nginx выполняет точечный proxy
+
+**⚠️ CORS обязателен:** виджет подключается на **внешних сайтах** (другой домен). Запросы к `/lead/send-lead` идут cross-origin. Без CORS и обработки OPTIONS (preflight) браузер блокирует запрос до отправки → `Failed to fetch`, заявки не доходят до backend. В nginx для этого location должны быть:
+- `add_header Access-Control-Allow-Origin "*" always;`
+- `add_header Access-Control-Allow-Methods "POST, OPTIONS" always;`
+- `add_header Access-Control-Allow-Headers "Content-Type" always;`
+- при `$request_method = OPTIONS` — `return 204;` (preflight).
+
+Подробный разбор инцидента и чек-лист — см. раздел 12 ниже.
 
 ---
 
@@ -257,7 +267,7 @@ Email / CRM
 4. nginx — единственная точка внешних контрактов
 5. Все внешние URL стабильны
 6. Внутренние пути можно менять без влияния на фронт
-7. chatflowId — технический идентификатор, не контракт
+7. Идентификатор потока AgentFlow V2 — технический идентификатор, не контракт
 
 ---
 
@@ -277,6 +287,39 @@ Email / CRM
 - ✅ делать backup `database.sqlite`
 - ✅ документировать nginx-контракты
 - ✅ разделять диалог и бизнес-логику
+- ✅ для любого публичного виджета: **сразу** настраивать CORS + OPTIONS для POST-endpoint'ов (см. раздел 12)
+- ✅ в nginx **не держать** несколько server-блоков с одним `server_name` (конфликт, нестабильное поведение)
+
+---
+
+## 12. Виджет на внешних сайтах: CORS и nginx
+
+Виджет подключается так:
+```html
+<script src="https://bot.jeeptour41.ru/widget/widget.js"></script>
+```
+Скрипт выполняется в контексте **сайта-клиента** (другой домен). Запросы к `bot.jeeptour41.ru` (Flowise API, `/lead/send-lead`) — cross-origin. Браузер требует CORS.
+
+### 12.1 Что обязательно в nginx для `/lead/send-lead`
+
+- **CORS-заголовки** на ответах (в т.ч. при ошибках — использовать `always`).
+- **Обработка OPTIONS** (preflight): для запроса с методом OPTIONS возвращать `204` с теми же CORS-заголовками, без проксирования на backend.
+
+Без этого: в DevTools запрос может быть «0.0 kB», без HTTP-статуса, в nginx access.log и логах backend запроса нет — браузер обрывает запрос до HTTP-уровня. В коде виджета — `TypeError: Failed to fetch`.
+
+### 12.2 Чего избегать
+
+- **Дублирующиеся server-блоки** с одним `server_name` в `sites-enabled` (например `bot.jeeptour41.ru` и `bot.jeeptour41.ru.bak`). nginx выдаёт `conflicting server name ... ignored`, поведение непредсказуемо.
+- Перед изменениями проверять: `grep -R "server_name bot.jeeptour41.ru" /etc/nginx/sites-enabled` — должен быть один конфиг.
+
+### 12.3 Чек-лист при добавлении нового endpoint для виджета
+
+1. Сразу добавить в nginx CORS-заголовки и обработку OPTIONS для этого location.
+2. Убедиться, что нет второго server-блока с тем же `server_name`.
+3. После правок: `nginx -t && systemctl reload nginx`.
+4. Проверять не только curl, но и вызов из браузера (DevTools → Network, запрос с другого домена) и при необходимости — nginx access.log.
+
+Подробный разбор инцидента «заявки не отправлялись (Failed to fetch)» зафиксирован в `123.md` в корне проекта.
 
 ---
 

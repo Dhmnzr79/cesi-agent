@@ -3,15 +3,14 @@ console.log("WIDGET JS LOADED");
 document.addEventListener("DOMContentLoaded", () => {
 
 (() => {
-  // 1) ВСТАВЬ СЮДА Chatflow ID из Flowise
-  const CHATFLOW_ID = "0c91c79c-28db-4d06-9b9b-94ca5abf3862";
+  // 1) AgentFlow ID из Flowise (именно AgentFlow, не Chatflow)
+  const AGENTFLOW_ID = "8bbbe87b-73c5-4a46-8feb-7c13d69e6a40";
 
-  // 2) URL Flowise (у тебя уже есть)
+  // 2) URL Flowise
   const FLOWISE_BASE = "https://bot.jeeptour41.ru";
 
-  // 3) Куда стучаться (самый частый endpoint Flowise)
-  // Если у тебя endpoint другой — ниже дам как проверить.
-  const ENDPOINT = `${FLOWISE_BASE}/api/v1/prediction/${CHATFLOW_ID}`;
+  // 3) Prediction API (Flow ID — тот же AgentFlow ID по докам)
+  const ENDPOINT = `${FLOWISE_BASE}/api/v1/prediction/${AGENTFLOW_ID}`;
 
   // SessionId для контекста диалога
   function getOrCreateSessionId() {
@@ -58,8 +57,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Состояние виджета
   const widgetState = {
-    currentStage: 'discovery' // синхронизируется с meta.stage
+    currentStage: 'discovery', // синхронизируется с meta.stage
+    leadSent: false,           // защита от повторной отправки заявки
+    leadName: null             // имя, собранное в диалоге (при leadIntent === 'awaiting_phone')
   };
+
+  const LEAD_ENDPOINT = `${FLOWISE_BASE}/lead/send-lead`;
+
+  async function sendLeadToBackend(name, phone, message) {
+    console.log('LEAD ENDPOINT', LEAD_ENDPOINT);
+    const res = await fetch(LEAD_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone, message: message || undefined })
+    });
+    if (!res.ok) return false;
+    let data = {};
+    try {
+      data = await res.json();
+    } catch (e) {
+      return true;
+    }
+    return data.success === true;
+  }
+
+  function setCompletedState() {
+    input.disabled = true;
+    send.disabled = true;
+    input.placeholder = "Заявка отправлена";
+  }
 
   function addMsg(text, who) {
     const d = document.createElement("div");
@@ -72,12 +98,28 @@ document.addEventListener("DOMContentLoaded", () => {
   // Парсинг ответа от Flowise (плоская структура: ui_ctaIntent, meta_stage и т.д.)
   function parseFlowiseResponse(data) {
     try {
-      // Пытаемся распарсить как JSON
+      // 1. AgentFlow V2 (редко, но оставляем)
+      if (Array.isArray(data) && data[0]?.json) {
+        data = data[0].json;
+      }
+      // 2. Prediction API: structured output лежит в data.json
+      if (data && typeof data === 'object' && data.json && typeof data.json === 'object') {
+        data = { ...data.json, text: data.text ?? '' };
+      }
+      // 3. Structured Output пришёл как JSON-строка в data.text
+      if (
+        data &&
+        typeof data === 'object' &&
+        typeof data.text === 'string' &&
+        data.text.trim().startsWith('{')
+      ) {
+        data = JSON.parse(data.text);
+      }
+      // 4. Если data — строка
       if (typeof data === 'string') {
         data = JSON.parse(data);
       }
-      
-      // Проверяем структуру (поддержка плоской и вложенной)
+      // 5. Дальше — существующая логика
       if (data && typeof data === 'object') {
         return {
           answer: data.answer || data.text || '',
@@ -96,10 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       }
     } catch (e) {
-      // Если не JSON, возвращаем как обычный текст
+      console.error('parseFlowiseResponse error', e);
     }
-    
-    // Fallback: обычный текст
+
+    // Fallback
     const text = typeof data === 'string' ? data : (data?.text || data?.answer || JSON.stringify(data));
     return {
       answer: text,
@@ -163,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   async function askFlowise(text) {
-    // Flowise обычно ждёт { question: "..." }
+    console.log('askFlowise called', { text });
     const res = await fetch(ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -175,6 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error(`HTTP ${res.status}: ${t}`);
     }
     const data = await res.json();
+    console.log('Flowise raw response', data);
 
     // Парсим ответ от Flowise
     const parsed = parseFlowiseResponse(data);
@@ -182,8 +225,36 @@ document.addEventListener("DOMContentLoaded", () => {
     // Обновляем состояние
     widgetState.currentStage = parsed.meta.stage;
     
-    // Отображаем ответ
+    // Сохраняем имя при переходе к запросу телефона
+    if (parsed.isValid && parsed.leadIntent === 'awaiting_phone') {
+      widgetState.leadName = text;
+    }
+    
+    // Отображаем ответ бота
     renderAnswer(parsed.answer);
+    
+    // Отладка: что пришло перед проверкой отправки заявки
+    console.log('LEAD CHECK', {
+      leadIntent: parsed.leadIntent,
+      leadName: widgetState.leadName,
+      text
+    });
+    
+    // leadIntent === 'complete' → отправка заявки (отдельный try/catch, не путать с ошибкой Flowise)
+    if (parsed.isValid && parsed.leadIntent === 'complete' && !widgetState.leadSent && widgetState.leadName) {
+      widgetState.leadSent = true;
+      try {
+        const ok = await sendLeadToBackend(widgetState.leadName, text);
+        if (ok) {
+          setCompletedState();
+        } else {
+          addMsg("Заявка отправлена, но без подтверждения. Мы свяжемся с вами.", "bot");
+        }
+      } catch (e) {
+        console.error('Lead send error', e);
+        addMsg("Заявка отправлена. Мы свяжемся с вами в ближайшее время.", "bot");
+      }
+    }
     
     // Показываем кнопку CTA если нужно
     if (parsed.isValid && parsed.ui.ctaIntent === 'booking' && parsed.meta.stage === 'ready' && parsed.flags.emotional === false) {

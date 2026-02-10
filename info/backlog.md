@@ -146,28 +146,9 @@ Flowise LLM → Structured Output (JSON) → parseFlowiseResponse() →
 applyBusinessRules() → shouldShowCTA() → renderAnswer() → renderCTA() (или нет)
 ```
 
-**JSON схема ответа от Flowise (минимальная для P0, плоская структура):**
-```json
-{
-  "answer": "Текст ответа пользователю",
-  "ui_ctaIntent": "booking",
-  "meta_stage": "ready",
-  "meta_confidence": 0.82,
-  "flags_emotional": false,
-  "leadIntent": "none"
-}
-```
-
-Плоская структура — обход ограничений Flowise (nested objects вызывают ошибку schema). `leadIntent` — режим записи: `none`, `awaiting_name`, `awaiting_phone`, `complete`.
-
-**Детали реализации P0:**
-
-**В Flowise:**
-- Настроить LLM ноду с JSON Structured Output (плоские ключи: String, Number, Boolean)
-- Схема: `answer`, `ui_ctaIntent`, `meta_stage`, `meta_confidence`, `flags_emotional`, `leadIntent`
-- Промпт учит модель определять стадию диалога и классифицировать эмоциональное состояние
-- `meta_confidence` — уверенность модели в классификации
-- **Важно:** Flowise не знает про "продуктовый CTA" — он только классифицирует состояние, фронт решает форму представления
+**JSON‑схема и ограничения Flowise:**
+- Минимальная схема ответа и плоские поля зафиксированы в `prompt.md` (§14) и `cta.md`.
+- Ограничения Structured Output и настройка LLM‑ноды Flowise (плоские ключи, `leadIntent` и т.п.) описаны в `flowise.md` (§3.1).
 
 **В виджете (`widget.js`):**
 - Функция `parseFlowiseResponse(data)` — парсит JSON ответ, извлекает `leadIntent`

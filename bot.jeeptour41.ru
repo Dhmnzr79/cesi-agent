@@ -20,8 +20,15 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # Backend заявок
+    # Backend заявок (CORS для виджета на любом домене)
     location /lead/send-lead {
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "POST, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type" always;
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Max-Age 86400;
+            return 204;
+        }
         proxy_pass http://127.0.0.1:3001/api/send-lead;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
