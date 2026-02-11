@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 2) URL Flowise
   const FLOWISE_BASE = "https://bot.jeeptour41.ru";
+  const PAGE_LOAD_TIME = Date.now();
 
   // 3) Prediction API (Flow ID — тот же AgentFlow ID по докам)
   const ENDPOINT = `${FLOWISE_BASE}/api/v1/prediction/${AGENTFLOW_ID}`;
@@ -92,10 +93,34 @@ document.addEventListener("DOMContentLoaded", () => {
     lastParsedResponse: null,
     startMenuUsed: false,
     lastInputAt: 0,
-    suggestedCheckInterval: null
+    suggestedCheckInterval: null,
+    scrollTriggerShown: false,
+    chatOpenedOnce: false
   };
 
   const LEAD_ENDPOINT = `${FLOWISE_BASE}/lead/send-lead`;
+
+  // Определение рабочего времени (Камчатка, UTC+12)
+  function isWorkingHours() {
+    const now = new Date();
+    const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+    const kamchatkaMs = utcMs + 12 * 60 * 60000;
+    const k = new Date(kamchatkaMs);
+    const day = k.getUTCDay(); // 0 воскресенье, 1 понедельник ...
+    const hour = k.getUTCHours();
+
+    // Воскресенье — выходной
+    if (day === 0) return false;
+    // Пн–Пт 8:00–20:00
+    if (day >= 1 && day <= 5) {
+      return hour >= 8 && hour < 20;
+    }
+    // Суббота 8:00–14:00
+    if (day === 6) {
+      return hour >= 8 && hour < 14;
+    }
+    return false;
+  }
 
   async function sendLeadToBackend(name, phone, message) {
     console.log('LEAD ENDPOINT', LEAD_ENDPOINT);
@@ -128,6 +153,99 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       widgetState.dialogState = 'normal';
     }
+  }
+
+  // Scroll-триггер: плавное расширение карточки один раз за сессию
+  function maybeShowScrollTeaser() {
+    if (widgetState.scrollTriggerShown) return;
+    if (widgetState.chatOpenedOnce) return;
+    if (!btn || btn.style.display === "none") return;
+
+    const now = Date.now();
+    if (now - PAGE_LOAD_TIME < 15000) return;
+
+    const doc = document.documentElement;
+    const scrollTop = window.scrollY || window.pageYOffset || 0;
+    const viewport = window.innerHeight || doc.clientHeight || 0;
+    const fullHeight = doc.scrollHeight || 0;
+    if (fullHeight <= 0) return;
+
+    const scrolled = (scrollTop + viewport) / fullHeight;
+    if (scrolled < 0.35) return;
+
+    widgetState.scrollTriggerShown = true;
+
+    const working = isWorkingHours();
+    const line1 = working ? "Есть вопрос по лечению?" : "Клиника сейчас не работает.";
+    const line2 = working ? "Могу коротко объяснить." : "Но я могу ответить на вопросы.";
+
+    let collapseTimer = null;
+
+    const collapseTeaser = () => {
+      if (collapseTimer) {
+        clearTimeout(collapseTimer);
+        collapseTimer = null;
+      }
+      btn.classList.remove("botWidgetClosed--teaser");
+      btn.removeEventListener("mouseenter", cancelCollapse);
+      btn.removeEventListener("touchstart", cancelCollapse);
+      if (closeBtn.parentNode) closeBtn.remove();
+      setTimeout(() => {
+        if (teaserEl.parentNode) teaserEl.remove();
+      }, 300);
+    };
+
+    const cancelCollapse = () => {
+      if (collapseTimer) {
+        clearTimeout(collapseTimer);
+        collapseTimer = null;
+      }
+    };
+
+    const teaserEl = document.createElement("div");
+    teaserEl.className = "botWidgetClosed-teaser";
+    teaserEl.innerHTML = `
+      <div class="botWidgetClosed-teaser-divider"></div>
+      <div class="botWidgetClosed-teaser-body">
+        <div class="botWidgetClosed-teaser-text">
+          <span class="botWidgetClosed-teaser-line1">${line1}</span>
+          <span class="botWidgetClosed-teaser-line2">${line2}</span>
+        </div>
+        <button type="button" class="botWidgetClosed-teaser-btn botWidgetClosed-teaser-btn--desktop">Открыть консультацию</button>
+        <button type="button" class="botWidgetClosed-teaser-btn botWidgetClosed-teaser-btn--mobile">Задать вопрос</button>
+      </div>
+    `;
+
+    const openChatFromTeaser = (e) => {
+      e.stopPropagation();
+      openChat();
+    };
+
+    teaserEl.querySelectorAll(".botWidgetClosed-teaser-btn").forEach((b) => {
+      b.addEventListener("click", openChatFromTeaser);
+    });
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "botWidgetClosed-teaser-close";
+    closeBtn.setAttribute("aria-label", "Свернуть");
+    closeBtn.textContent = "✕";
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      collapseTeaser();
+    });
+
+    btn.appendChild(teaserEl);
+    btn.appendChild(closeBtn);
+
+    btn.addEventListener("mouseenter", cancelCollapse);
+    btn.addEventListener("touchstart", cancelCollapse);
+
+    requestAnimationFrame(() => {
+      btn.classList.add("botWidgetClosed--teaser");
+    });
+
+    collapseTimer = setTimeout(collapseTeaser, 8000);
   }
 
   // Стартовое меню: 3 пункта до первого сообщения
@@ -342,6 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function openChat() {
+    widgetState.chatOpenedOnce = true;
     box.style.display = "block";
     btn.style.display = "none";
     renderStartMenu();
@@ -367,6 +486,9 @@ document.addEventListener("DOMContentLoaded", () => {
       widgetState.suggestedCheckInterval = null;
     }
   };
+
+  // Инициализация scroll-триггера
+  window.addEventListener("scroll", maybeShowScrollTeaser);
 
   async function askFlowise(text) {
     console.log('askFlowise called', { text });
