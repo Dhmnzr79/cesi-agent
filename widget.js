@@ -14,17 +14,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // 3) Prediction API (Flow ID — тот же AgentFlow ID по докам)
   const ENDPOINT = `${FLOWISE_BASE}/api/v1/prediction/${AGENTFLOW_ID}`;
 
-  // SessionId для контекста диалога
+  // Session management: один sessionId на пользователя, создаётся при первом открытии виджета
+  const SESSION_STORAGE_KEY = "cesi_chat_session_id";
+  const HISTORY_STORAGE_KEY = "cesi_chat_history";
+
+  let sessionId = null;
+
   function getOrCreateSessionId() {
-    const STORAGE_KEY = "botWidgetSessionId";
-    let sessionId = localStorage.getItem(STORAGE_KEY);
-    if (!sessionId) {
-      sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
-      localStorage.setItem(STORAGE_KEY, sessionId);
+    if (sessionId) return sessionId;
+    let stored = localStorage.getItem(SESSION_STORAGE_KEY);
+    if (stored) {
+      sessionId = stored;
+      return sessionId;
     }
+    sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
     return sessionId;
   }
-  const SESSION_ID = getOrCreateSessionId();
 
   // ---- UI ----
   const css = document.createElement("link");
@@ -63,8 +69,15 @@ document.addEventListener("DOMContentLoaded", () => {
   box.id = "botWidgetBox";
   box.innerHTML = `
     <div id="botWidgetHeader">
-      <div>Бот клиники</div>
-      <button id="botWidgetClose" style="background:transparent;border:0;color:#fff;cursor:pointer;font-size:16px">×</button>
+      <div class="botWidgetHeader-info">
+        <img src="${AVATAR_URL}" alt="" class="botWidgetHeader-avatar" onerror="this.style.display='none'">
+        <div>
+          <div class="botWidgetHeader-name">Анна</div>
+          <div class="botWidgetHeader-role">Онлайн консультант ЦЭСИ</div>
+          <div class="botWidgetHeader-online">🟢 Онлайн 24/7</div>
+        </div>
+      </div>
+      <button id="botWidgetClose" class="botWidgetHeader-close" type="button" aria-label="Закрыть">×</button>
     </div>
     <div id="botWidgetMsgs"></div>
     <div id="botWidgetForm">
@@ -338,12 +351,49 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function addMsg(text, who) {
+  function addMsg(text, who, skipSave) {
     const d = document.createElement("div");
     d.className = `botMsg ${who === "user" ? "botUser" : "botBot"}`;
     d.textContent = text;
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
+    if (!skipSave) saveHistory();
+  }
+
+  function saveHistory() {
+    const items = [];
+    msgs.querySelectorAll(".botMsg").forEach((el) => {
+      const who = el.classList.contains("botUser") ? "user" : "bot";
+      items.push({ text: el.textContent, who });
+    });
+    const state = {
+      messages: items,
+      leadSent: widgetState.leadSent
+    };
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function restoreHistory() {
+    try {
+      const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (!raw) return false;
+      const state = JSON.parse(raw);
+      const messages = state.messages || [];
+      if (messages.length === 0) return false;
+
+      messages.forEach(({ text, who }) => {
+        addMsg(text, who, true);
+      });
+      if (state.leadSent) {
+        widgetState.leadSent = true;
+        setCompletedState();
+      }
+      widgetState.messageCount = messages.filter((m) => m.who === "user").length;
+      return true;
+    } catch (e) {
+      console.warn("restoreHistory error", e);
+      return false;
+    }
   }
 
   // Парсинг ответа от Flowise (плоская структура: ui_ctaIntent, meta_stage и т.д.)
@@ -459,18 +509,51 @@ document.addEventListener("DOMContentLoaded", () => {
     askFlowise(text);
   }
 
-  function openChat() {
+  const WELCOME_TEXT = "Здравствуйте.\nЯ онлайн-консультант клиники ЦЭСИ.\nМогу помочь разобраться в вопросах лечения.";
+
+  function openChat(intentMessage) {
     widgetState.chatOpenedOnce = true;
-    box.style.display = "block";
+    box.style.display = "flex";
     btn.style.display = "none";
-    renderStartMenu();
+
+    getOrCreateSessionId();
+
+    const hasContent = msgs.querySelectorAll(".botMsg").length > 0;
+    if (!hasContent) {
+      const hasHistory = restoreHistory();
+      if (intentMessage) {
+        // CTA: не показывать приветствие, сразу отправить intent
+      } else if (!hasHistory) {
+        addMsg(WELCOME_TEXT, "bot");
+      }
+      if (!intentMessage) renderStartMenu();
+    } else if (widgetState.leadSent) {
+      setCompletedState();
+    }
+
+    if (intentMessage) {
+      addMsg(intentMessage, "user");
+      widgetState.hasInteracted = true;
+      widgetState.messageCount++;
+      hideStartMenu();
+      askFlowise(intentMessage).catch((e) => {
+        addMsg("Не получилось связаться с мозгом. Сейчас проверим endpoint / доступ.", "bot");
+        addMsg(String(e.message || e), "bot");
+        widgetState.lastBotMessageTime = Date.now();
+      });
+    }
+
     input.focus();
     if (!widgetState.suggestedCheckInterval) {
       widgetState.suggestedCheckInterval = setInterval(checkSuggestedConditions, 3000);
     }
   }
 
-  btn.onclick = openChat;
+  window.openCesiChat = function(intent) {
+    openChat(intent || null);
+  };
+
+  btn.onclick = () => openChat();
   btn.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -491,11 +574,11 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("scroll", maybeShowScrollTeaser);
 
   async function askFlowise(text) {
-    console.log('askFlowise called', { text });
+    const sid = getOrCreateSessionId();
     const res = await fetch(ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: text, overrideConfig: { sessionId: SESSION_ID } })
+      body: JSON.stringify({ question: text, overrideConfig: { sessionId: sid } })
     });
 
     if (!res.ok) {
@@ -533,6 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // leadIntent === 'complete' → отправка заявки (отдельный try/catch, не путать с ошибкой Flowise)
     if (parsed.isValid && parsed.leadIntent === 'complete' && !widgetState.leadSent && widgetState.leadName) {
       widgetState.leadSent = true;
+      saveHistory();
       try {
         const ok = await sendLeadToBackend(widgetState.leadName, text);
         if (ok) {

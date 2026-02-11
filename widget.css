@@ -304,35 +304,93 @@
 #botWidgetBox {
   position: fixed;
   right: 20px;
-  bottom: 75px;
+  bottom: 20px;
   width: 320px;
-  max-height: 420px;
+  height: 420px;
+  max-height: 80vh;
   z-index: 99999;
-  border-radius: 14px;
+  border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
   background: #fff;
   font-family: Inter, Arial, sans-serif;
   display: none;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  #botWidgetBox {
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
 }
 
 #botWidgetHeader {
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: #111;
   color: #fff;
   font-size: 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.botWidgetHeader-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.botWidgetHeader-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.botWidgetHeader-name {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.botWidgetHeader-role {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-top: 1px;
+}
+
+.botWidgetHeader-online {
+  font-size: 11px;
+  color: #22c55e;
+  margin-top: 2px;
+}
+
+.botWidgetHeader-close {
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px;
+  margin: -4px -4px -4px 0;
 }
 
 #botWidgetMsgs {
+  flex: 1;
   padding: 10px 12px;
   gap: 8px;
   display: flex;
   flex-direction: column;
   overflow: auto;
-  max-height: 300px;
+  min-height: 0;
 }
 
 .botMsg {
@@ -341,6 +399,7 @@
   max-width: 85%;
   font-size: 14px;
   line-height: 1.35;
+  white-space: pre-line;
 }
 
 .botUser {
@@ -354,6 +413,7 @@
 }
 
 #botWidgetForm {
+  flex-shrink: 0;
   display: flex;
   gap: 8px;
   padding: 10px;
