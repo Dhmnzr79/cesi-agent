@@ -1,6 +1,23 @@
 // Виджет ЦЭСИ. Для работы аватара: avatar.png должен быть в /widget/ на сервере (рядом с widget.js).
 console.log("WIDGET JS LOADED");
 
+// Мобильная клавиатура: Layout Viewport должен сжиматься, чтобы шапка не уезжала вверх.
+function ensureViewportForKeyboard() {
+  const meta = document.querySelector('meta[name="viewport"]');
+  const needed = "interactive-widget=resizes-content";
+  if (meta) {
+    if (!meta.getAttribute("content").includes("interactive-widget")) {
+      meta.setAttribute("content", meta.getAttribute("content") + ", " + needed);
+    }
+  } else {
+    const m = document.createElement("meta");
+    m.name = "viewport";
+    m.content = "width=device-width, initial-scale=1, " + needed;
+    document.head.appendChild(m);
+  }
+}
+ensureViewportForKeyboard();
+
 document.addEventListener("DOMContentLoaded", () => {
 
 (() => {
@@ -543,7 +560,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    input.focus();
+    if (!window.matchMedia("(max-width: 768px)").matches) {
+      input.focus();
+    }
     if (!widgetState.suggestedCheckInterval) {
       widgetState.suggestedCheckInterval = setInterval(checkSuggestedConditions, 3000);
     }
@@ -665,6 +684,25 @@ document.addEventListener("DOMContentLoaded", () => {
   input.addEventListener("input", () => {
     widgetState.lastInputAt = Date.now();
   });
+
+  function initMobileViewportFix() {
+    if (!window.visualViewport) return;
+    const boxEl = document.getElementById("botWidgetBox");
+    if (!boxEl) return;
+
+    const updateHeight = () => {
+      boxEl.style.height = window.visualViewport.height + "px";
+    };
+
+    updateHeight();
+    window.visualViewport.addEventListener("resize", updateHeight);
+    window.visualViewport.addEventListener("scroll", updateHeight);
+  }
+
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  if (isMobile) {
+    initMobileViewportFix();
+  }
 })();
 
 });

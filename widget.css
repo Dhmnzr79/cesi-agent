@@ -320,16 +320,19 @@
 
 @media (max-width: 768px) {
   #botWidgetBox {
-    right: 0;
-    bottom: 0;
+    position: fixed;
+    inset: 0;
     width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
+    height: 100dvh;
+    max-height: none;
     border-radius: 0;
+    display: flex;
+    flex-direction: column;
   }
 }
 
 #botWidgetHeader {
+  flex: 0 0 auto;
   padding: 12px 14px;
   background: #111;
   color: #fff;
@@ -337,7 +340,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
 }
 
 .botWidgetHeader-info {
@@ -384,12 +386,13 @@
 }
 
 #botWidgetMsgs {
-  flex: 1;
+  flex: 1 1 auto;
   padding: 10px 12px;
   gap: 8px;
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   min-height: 0;
 }
 
@@ -413,7 +416,7 @@
 }
 
 #botWidgetForm {
-  flex-shrink: 0;
+  flex: 0 0 auto;
   display: flex;
   gap: 8px;
   padding: 10px;
