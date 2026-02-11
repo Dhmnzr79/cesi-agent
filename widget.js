@@ -1,6 +1,16 @@
 // Виджет ЦЭСИ. Для работы аватара: avatar.png должен быть в /widget/ на сервере (рядом с widget.js).
 console.log("WIDGET JS LOADED");
 
+function ensureWidgetFont() {
+  if (document.getElementById("cesi-widget-font")) return;
+  const link = document.createElement("link");
+  link.id = "cesi-widget-font";
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap";
+  document.head.appendChild(link);
+}
+ensureWidgetFont();
+
 // Мобильная клавиатура: Layout Viewport должен сжиматься, чтобы шапка не уезжала вверх.
 function ensureViewportForKeyboard() {
   const meta = document.querySelector('meta[name="viewport"]');
@@ -31,22 +41,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // 3) Prediction API (Flow ID — тот же AgentFlow ID по докам)
   const ENDPOINT = `${FLOWISE_BASE}/api/v1/prediction/${AGENTFLOW_ID}`;
 
-  // Session management: один sessionId на пользователя, создаётся при первом открытии виджета
+  // Session management: один sessionId на пользователя, TTL 24 часа
   const SESSION_STORAGE_KEY = "cesi_chat_session_id";
+  const SESSION_TS_KEY = "cesi_chat_session_ts";
   const HISTORY_STORAGE_KEY = "cesi_chat_history";
+  const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
   let sessionId = null;
 
   function getOrCreateSessionId() {
     if (sessionId) return sessionId;
-    let stored = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (stored) {
+    const stored = localStorage.getItem(SESSION_STORAGE_KEY);
+    const storedTs = parseInt(localStorage.getItem(SESSION_TS_KEY) || "0", 10);
+    const now = Date.now();
+    if (stored && storedTs && (now - storedTs) < SESSION_TTL_MS) {
       sessionId = stored;
       return sessionId;
     }
+    clearSession();
     sessionId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    localStorage.setItem(SESSION_TS_KEY, String(now));
     return sessionId;
+  }
+
+  function clearSession() {
+    sessionId = null;
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(SESSION_TS_KEY);
+    localStorage.removeItem(HISTORY_STORAGE_KEY);
   }
 
   // ---- UI ----
@@ -94,12 +117,17 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="botWidgetHeader-online">🟢 Онлайн 24/7</div>
         </div>
       </div>
-      <button id="botWidgetClose" class="botWidgetHeader-close" type="button" aria-label="Закрыть">×</button>
+      <div class="botWidgetHeader-actions">
+        <button id="botWidgetClearSession" class="botWidgetHeader-clearSession" type="button" title="Отладка: удалить сессию">Удалить сессию</button>
+        <button id="botWidgetClose" class="botWidgetHeader-close" type="button" aria-label="Закрыть">×</button>
+      </div>
     </div>
     <div id="botWidgetMsgs"></div>
     <div id="botWidgetForm">
-      <textarea id="botWidgetInput" placeholder="Напишите сообщение..." rows="1"></textarea>
-      <button id="botWidgetSend" type="button">Отправить</button>
+      <div id="botWidgetFormInner">
+        <textarea id="botWidgetInput" placeholder="Напишите сообщение..." rows="1"></textarea>
+        <button id="botWidgetSend" type="button" aria-label="Отправить"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+      </div>
     </div>
   `;
   document.body.appendChild(box);
@@ -170,9 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setCompletedState() {
-    input.disabled = true;
-    send.disabled = true;
-    input.placeholder = "Заявка отправлена";
+    input.placeholder = "Напишите сообщение...";
   }
 
   function updateDialogState() {
@@ -387,8 +413,8 @@ document.addEventListener("DOMContentLoaded", () => {
       send.disabled = true;
       box.querySelector('#botWidgetForm').classList.add('is-loading');
     } else {
-      input.disabled = widgetState.leadSent;
-      send.disabled = widgetState.leadSent;
+      input.disabled = false;
+      send.disabled = false;
       box.querySelector('#botWidgetForm').classList.remove('is-loading');
     }
   }
@@ -672,6 +698,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  const clearSessionBtn = box.querySelector("#botWidgetClearSession");
+  if (clearSessionBtn) {
+    clearSessionBtn.onclick = () => {
+      clearSession();
+      location.reload();
+    };
+  }
+
   // Инициализация scroll-триггера
   window.addEventListener("scroll", maybeShowScrollTeaser);
 
@@ -727,6 +761,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const ok = await sendLeadToBackend(widgetState.leadName, text);
         if (ok) {
           setCompletedState();
+          if (!isWorkingHours()) {
+            addMsg("Сейчас клиника не работает. Мы свяжемся с вами в рабочее время.", "bot");
+          }
         } else {
           addMsg("Заявка отправлена, но без подтверждения. Мы свяжемся с вами.", "bot");
         }
@@ -765,6 +802,8 @@ document.addEventListener("DOMContentLoaded", () => {
     widgetState.messageCount++;
     hideStartMenu();
     input.value = "";
+    updateSendButtonState();
+    autoGrowTextarea();
     addMsg(text, "user");
 
     try {
@@ -774,6 +813,17 @@ document.addEventListener("DOMContentLoaded", () => {
       addMsg(String(e.message || e), "bot");
       widgetState.lastBotMessageTime = Date.now();
     }
+  }
+
+  function updateSendButtonState() {
+    const hasText = input.value.trim().length > 0;
+    send.classList.toggle("has-text", hasText);
+  }
+
+  function autoGrowTextarea() {
+    input.style.height = "auto";
+    const h = Math.min(input.scrollHeight, 120);
+    input.style.height = h + "px";
   }
 
   send.onclick = onSend;
@@ -788,7 +838,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   input.addEventListener("input", () => {
     widgetState.lastInputAt = Date.now();
+    updateSendButtonState();
+    autoGrowTextarea();
   });
+
+  updateSendButtonState();
+  autoGrowTextarea();
 
   function initMobileViewportFix() {
     if (!window.visualViewport) return;
