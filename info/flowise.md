@@ -78,6 +78,7 @@ Flowise **не**:
 - `ui.ctaIntent` — намерение по CTA (например, запись)
 - `meta.stage` — стадия воронки (например, `ready`)
 - `meta.confidence` — уверенность модели в оценке
+- `meta.shouldHandoff` — рекомендация передать диалог администратору
 - `flags.emotional` — эмоциональное состояние / «горячесть» диалога
 
 Полная и расширенная схема (P1+) описана в `cta.md` и в соответствующем разделе `prompt.md`.  
@@ -129,6 +130,7 @@ Flowise **не**:
 - `flags_emotional` — эмоциональное состояние пользователя (boolean)
 - `leadIntent` — режим записи для виджета:  
   `none | awaiting_name | awaiting_phone | complete`
+- `meta_shouldHandoff` — рекомендация передать диалог администратору (boolean), по умолчанию `false`
 
 **Требования к настройке LLM‑ноды в AgentFlow V2 (P0):**
 

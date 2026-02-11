@@ -1,3 +1,4 @@
+// Виджет ЦЭСИ. Для работы аватара: avatar.png должен быть в /widget/ на сервере (рядом с widget.js).
 console.log("WIDGET JS LOADED");
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,9 +31,31 @@ document.addEventListener("DOMContentLoaded", () => {
   css.href = `${FLOWISE_BASE}/widget/widget.css`;
   document.head.appendChild(css);
 
-  const btn = document.createElement("button");
+  const AVATAR_URL = `${FLOWISE_BASE}/widget/avatar.png`;
+
+  const btn = document.createElement("div");
   btn.id = "botWidgetBtn";
-  btn.textContent = "Чат";
+  btn.className = "botWidgetClosed";
+  btn.setAttribute("aria-label", "Открыть чат с Анной");
+  btn.innerHTML = `
+    <div class="botWidgetClosed-inner">
+      <div class="botWidgetClosed-avatarWrap">
+        <img src="${AVATAR_URL}" alt="Анна" class="botWidgetClosed-avatar" onerror="this.style.display='none'">
+        <span class="botWidgetClosed-status" aria-hidden="true"></span>
+      </div>
+      <div class="botWidgetClosed-main">
+        <div class="botWidgetClosed-info">
+          <span class="botWidgetClosed-name">Анна</span>
+          <span class="botWidgetClosed-role">Онлайн консультант ЦЭСИ</span>
+          <span class="botWidgetClosed-online botWidgetClosed-online--desktop">🟢 Онлайн 24/7</span>
+        </div>
+        <button type="button" class="botWidgetClosed-btn botWidgetClosed-btn--desktop" tabindex="-1">Задать вопрос</button>
+        <span class="botWidgetClosed-hint botWidgetClosed-hint--desktop">Без звонков и спама</span>
+      </div>
+    </div>
+  `;
+  btn.setAttribute("role", "button");
+  btn.tabIndex = 0;
   document.body.appendChild(btn);
 
   const box = document.createElement("div");
@@ -57,9 +80,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Состояние виджета
   const widgetState = {
-    currentStage: 'discovery', // синхронизируется с meta.stage
-    leadSent: false,           // защита от повторной отправки заявки
-    leadName: null             // имя, собранное в диалоге (при leadIntent === 'awaiting_phone')
+    currentStage: 'discovery',
+    leadSent: false,
+    leadName: null,
+    messageCount: 0,
+    dialogState: 'normal',
+    leadIntent: 'none',
+    hasInteracted: false,
+    suggestedShownCount: 0,
+    lastBotMessageTime: 0,
+    lastParsedResponse: null,
+    startMenuUsed: false,
+    lastInputAt: 0,
+    suggestedCheckInterval: null
   };
 
   const LEAD_ENDPOINT = `${FLOWISE_BASE}/lead/send-lead`;
@@ -85,6 +118,106 @@ document.addEventListener("DOMContentLoaded", () => {
     input.disabled = true;
     send.disabled = true;
     input.placeholder = "Заявка отправлена";
+  }
+
+  function updateDialogState() {
+    if (widgetState.leadSent) {
+      widgetState.dialogState = 'blocked';
+    } else if (widgetState.leadIntent === 'awaiting_name' || widgetState.leadIntent === 'awaiting_phone') {
+      widgetState.dialogState = 'collecting_contact';
+    } else {
+      widgetState.dialogState = 'normal';
+    }
+  }
+
+  // Стартовое меню: 3 пункта до первого сообщения
+  const START_MENU_ITEMS = [
+    'Я переживаю насчёт боли',
+    'Посмотреть цены',
+    'Как проходит консультация'
+  ];
+
+  function renderStartMenu() {
+    if (widgetState.messageCount > 0 || widgetState.dialogState !== 'normal') return;
+    const existing = msgs.querySelector('.botStartMenu');
+    if (existing) return;
+
+    const container = document.createElement('div');
+    container.className = 'botStartMenu';
+    START_MENU_ITEMS.forEach(text => {
+      const btn = document.createElement('button');
+      btn.className = 'botStartMenuItem';
+      btn.textContent = text;
+      btn.onclick = () => {
+        widgetState.startMenuUsed = true;
+        sendAsUser(text);
+      };
+      container.appendChild(btn);
+    });
+    msgs.appendChild(container);
+  }
+
+  function hideStartMenu() {
+    const el = msgs.querySelector('.botStartMenu');
+    if (el) el.remove();
+  }
+
+  // Подсказки при зависании: 1 показ за сессию
+  const SUGGESTED_ITEMS = [
+    'Этапы имплантации',
+    'Что входит в консультацию',
+    'Какая приживаемость имплантов?'
+  ];
+
+  function renderSuggestedBlock() {
+    if (widgetState.suggestedShownCount > 0) return;
+    const existing = msgs.querySelector('.botSuggested');
+    if (existing) return;
+
+    const container = document.createElement('div');
+    container.className = 'botSuggested';
+    const title = document.createElement('div');
+    title.className = 'botSuggestedTitle';
+    title.textContent = 'Часто спрашивают:';
+    container.appendChild(title);
+    SUGGESTED_ITEMS.forEach(text => {
+      const btn = document.createElement('button');
+      btn.className = 'botSuggestedItem';
+      btn.textContent = text;
+      btn.onclick = () => {
+        container.remove();
+        widgetState.suggestedShownCount = 1;
+        sendAsUser(text);
+      };
+      container.appendChild(btn);
+    });
+    msgs.appendChild(container);
+    msgs.scrollTop = msgs.scrollHeight;
+    widgetState.suggestedShownCount = 1;
+  }
+
+  function checkSuggestedConditions() {
+    if (widgetState.suggestedShownCount > 0) return;
+    if (widgetState.leadIntent !== 'none') return;
+    if (widgetState.lastBotMessageTime === 0) return;
+    if (Date.now() - widgetState.lastBotMessageTime < 15000) return;
+
+    renderSuggestedBlock();
+  }
+
+  async function sendAsUser(text) {
+    input.value = '';
+    addMsg(text, 'user');
+    widgetState.hasInteracted = true;
+    widgetState.messageCount++;
+    hideStartMenu();
+    try {
+      await askFlowise(text);
+    } catch (e) {
+      addMsg("Не получилось связаться с мозгом. Сейчас проверим endpoint / доступ.", "bot");
+      addMsg(String(e.message || e), "bot");
+      widgetState.lastBotMessageTime = Date.now();
+    }
   }
 
   function addMsg(text, who) {
@@ -128,7 +261,8 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           meta: {
             stage: data.meta_stage ?? data.meta?.stage ?? 'discovery',
-            confidence: data.meta_confidence ?? data.meta?.confidence ?? 0
+            confidence: data.meta_confidence ?? data.meta?.confidence ?? 0,
+            shouldHandoff: data.meta_shouldHandoff ?? data.meta?.shouldHandoff ?? false
           },
           flags: {
             emotional: data.flags_emotional ?? data.flags?.emotional ?? false
@@ -146,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return {
       answer: text,
       ui: { ctaIntent: 'none' },
-      meta: { stage: widgetState.currentStage, confidence: 0 },
+      meta: { stage: widgetState.currentStage, confidence: 0, shouldHandoff: false },
       flags: { emotional: false },
       leadIntent: 'none',
       isValid: false
@@ -158,23 +292,27 @@ document.addEventListener("DOMContentLoaded", () => {
     addMsg(answer, "bot");
   }
 
-  // Отображение кнопки CTA
-  function renderCTAButton() {
-    // Удаляем предыдущую кнопку если есть
+  // Отображение кнопки CTA: booking или handoff
+  function renderCTAButton(type) {
     const existingCTA = msgs.querySelector(".botCTAButton");
-    if (existingCTA) {
-      existingCTA.parentElement.remove();
-    }
+    if (existingCTA) existingCTA.parentElement.remove();
 
     const ctaBtn = document.createElement("button");
     ctaBtn.className = "botCTAButton";
-    ctaBtn.textContent = "Хочу записаться";
+    if (type === "handoff") {
+      ctaBtn.textContent = "Связаться с администратором";
+      ctaBtn.onclick = () => {
+        ctaBtn.parentElement.remove();
+        onHandoffClick();
+      };
+    } else {
+      ctaBtn.textContent = "Хочу записаться";
+      ctaBtn.onclick = () => {
+        ctaBtn.parentElement.remove();
+        onCTAClick();
+      };
+    }
     ctaBtn.style.cssText = "margin: 8px 0; padding: 10px 16px; background: #4ECDC4; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;";
-    
-    ctaBtn.onclick = () => {
-      ctaBtn.parentElement.remove();
-      onCTAClick();
-    };
 
     const msgContainer = document.createElement("div");
     msgContainer.style.cssText = "display: flex; flex-direction: column; align-items: flex-start;";
@@ -183,25 +321,51 @@ document.addEventListener("DOMContentLoaded", () => {
     msgs.scrollTop = msgs.scrollHeight;
   }
 
-  // Обработчик клика на кнопку CTA
   function onCTAClick() {
-    // Отправляем сообщение в чат, а не открываем форму
     const text = "Хочу записаться";
     input.value = "";
+    widgetState.hasInteracted = true;
+    widgetState.messageCount++;
+    hideStartMenu();
     addMsg(text, "user");
     askFlowise(text);
   }
 
-  btn.onclick = () => {
+  function onHandoffClick() {
+    const text = "Хочу связаться с администратором";
+    input.value = "";
+    widgetState.hasInteracted = true;
+    widgetState.messageCount++;
+    hideStartMenu();
+    addMsg(text, "user");
+    askFlowise(text);
+  }
+
+  function openChat() {
     box.style.display = "block";
     btn.style.display = "none";
-    addMsg("Привет! Напишите «Привет», чтобы проверить связь 🙂", "bot");
+    renderStartMenu();
     input.focus();
-  };
+    if (!widgetState.suggestedCheckInterval) {
+      widgetState.suggestedCheckInterval = setInterval(checkSuggestedConditions, 3000);
+    }
+  }
+
+  btn.onclick = openChat;
+  btn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openChat();
+    }
+  });
 
   close.onclick = () => {
     box.style.display = "none";
     btn.style.display = "block";
+    if (widgetState.suggestedCheckInterval) {
+      clearInterval(widgetState.suggestedCheckInterval);
+      widgetState.suggestedCheckInterval = null;
+    }
   };
 
   async function askFlowise(text) {
@@ -224,6 +388,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Обновляем состояние
     widgetState.currentStage = parsed.meta.stage;
+    widgetState.leadIntent = parsed.leadIntent;
+    widgetState.lastParsedResponse = parsed.isValid ? { flags: parsed.flags, ui: parsed.ui, meta: parsed.meta } : null;
+    updateDialogState();
     
     // Сохраняем имя при переходе к запросу телефона
     if (parsed.isValid && parsed.leadIntent === 'awaiting_phone') {
@@ -232,6 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Отображаем ответ бота
     renderAnswer(parsed.answer);
+    widgetState.lastBotMessageTime = Date.now();
     
     // Отладка: что пришло перед проверкой отправки заявки
     console.log('LEAD CHECK', {
@@ -256,15 +424,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
-    // Показываем кнопку CTA если нужно
-    if (parsed.isValid && parsed.ui.ctaIntent === 'booking' && parsed.meta.stage === 'ready' && parsed.flags.emotional === false) {
-      renderCTAButton();
+    // Показываем кнопку CTA: handoff приоритетнее booking (в режиме записи CTA не показываем)
+    if (parsed.isValid && parsed.leadIntent === 'none' && parsed.flags.emotional === false) {
+      if (parsed.meta.shouldHandoff === true) {
+        renderCTAButton("handoff");
+      } else if (parsed.ui.ctaIntent === 'booking' && parsed.meta.stage === 'ready') {
+        renderCTAButton("booking");
+      }
     }
   }
 
   async function onSend() {
     const text = input.value.trim();
     if (!text) return;
+    widgetState.hasInteracted = true;
+    widgetState.messageCount++;
+    hideStartMenu();
     input.value = "";
     addMsg(text, "user");
 
@@ -273,12 +448,16 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       addMsg("Не получилось связаться с мозгом. Сейчас проверим endpoint / доступ.", "bot");
       addMsg(String(e.message || e), "bot");
+      widgetState.lastBotMessageTime = Date.now();
     }
   }
 
   send.onclick = onSend;
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") onSend();
+  });
+  input.addEventListener("input", () => {
+    widgetState.lastInputAt = Date.now();
   });
 })();
 

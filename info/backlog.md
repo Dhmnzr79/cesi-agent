@@ -138,7 +138,7 @@
 **Описание:**
 - Базовая реализация гибридного подхода: GPT рекомендует CTA, фронт проверяет правила и решает
 - Простая логика без отложенных CTA и сложных confidence-порогов
-- Только тип CTA `booking` (запись на консультацию)
+- Типы CTA: `booking` (запись) и handoff при `meta_shouldHandoff === true` («Связаться с администратором»)
 
 **Архитектура (упрощённый поток):**
 ```
@@ -147,7 +147,7 @@ applyBusinessRules() → shouldShowCTA() → renderAnswer() → renderCTA() (и�
 ```
 
 **JSON‑схема и ограничения Flowise:**
-- Минимальная схема ответа и плоские поля зафиксированы в `prompt.md` (§14) и `cta.md`.
+- Минимальная схема P0: `answer`, `ui_ctaIntent`, `meta_stage`, `meta_confidence`, `flags_emotional`, `leadIntent`, `meta_shouldHandoff`. См. `prompt.md` (§14) и `cta.md`.
 - Ограничения Structured Output и настройка LLM‑ноды Flowise (плоские ключи, `leadIntent` и т.п.) описаны в `flowise.md` (§3.1).
 
 **В виджете (`widget.js`):**
@@ -161,26 +161,27 @@ applyBusinessRules() → shouldShowCTA() → renderAnswer() → renderCTA() (и�
 - Состояние виджета: `currentStage`, `dialogState`, `lastUserMessage` (для lead)
 
 **Бизнес-правила на фронте (P0 — минимальный набор):**
-- Если `dialogState !== 'normal'` → не показывать CTA
+- Если `leadIntent !== 'none'` или `dialogState !== 'normal'` → не показывать CTA
 - Если `flags.emotional === true` → только диалоговый CTA в тексте, кнопки не показывать
-- Если `meta.stage !== 'ready'` → не показывать CTA
-- Если `meta.confidence < 0.4` → игнорировать рекомендации GPT
+- Если `meta_shouldHandoff === true` → показать handoff («Связаться с администратором»), не booking
+- Если `meta.stage !== 'ready'` и нет handoff → не показывать booking CTA
+- Если `meta.confidence < 0.4` → игнорировать рекомендации GPT (кроме handoff)
 - Если JSON не распарсился → fallback: показать только текст, без CTA
 
 **Логика отображения (P0):**
 ```javascript
-// Псевдокод логики P0 (виджет маппит плоские ключи в parsed.ui, parsed.meta, parsed.flags)
-if (dialogState !== 'normal') return; // нет CTA
-if (parsed.flags.emotional === true) return; // только текст
-if (parsed.ui.ctaIntent === 'booking' && parsed.meta.stage === 'ready' && parsed.meta.confidence >= 0.4) {
+// Псевдокод логики P0
+if (leadIntent !== 'none' || dialogState !== 'normal') return;
+if (parsed.flags.emotional === true) return;
+if (parsed.meta.shouldHandoff === true) renderCTA('handoff');
+else if (parsed.ui.ctaIntent === 'booking' && parsed.meta.stage === 'ready' && parsed.meta.confidence >= 0.4)
   renderCTA('booking');
-}
 ```
 
 **Что НЕ входит в P0:**
 - Отложенные CTA (`pendingCTA`)
 - Сложные confidence-пороги (только один: < 0.4)
-- Типы CTA кроме `booking`
+- Типы CTA кроме `booking` и handoff (через `meta_shouldHandoff`)
 - `ctaTiming`, `ctaText` (генерируются фронтом)
 - Лимиты показов CTA (`ctaShownCount`)
 

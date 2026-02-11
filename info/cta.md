@@ -24,7 +24,7 @@
 Используется **Structured Output (JSON)** как стандарт взаимодействия между LLM (в Flowise) и фронтом.  
 Схема соответствует best practices conversational AI **2025–2026**.
 
-**P0 vs P1+:** В P0 используется минимальная схема (см. [`prompt.md`](prompt.md) §14): `answer`, `ui.ctaIntent`, `meta.stage`, `meta.confidence`, `flags.emotional`. Расширенные поля ниже (`showCTA`, `ctaText`, `ctaTiming`, `meta.intent`, `shouldHandoff`, `flags.isOffTopic`, `isFlood`, `needsEmpathy`) — P1+.
+**P0 vs P1+:** В P0 используется минимальная схема (см. [`prompt.md`](prompt.md) §14): `answer`, `ui.ctaIntent`, `meta.stage`, `meta.confidence`, `flags.emotional`, `meta.shouldHandoff`, `leadIntent`. Расширенные поля ниже (`showCTA`, `ctaText`, `ctaTiming`, `meta.intent`, `flags.isOffTopic`, `isFlood`, `needsEmpathy`) — P1+.
 
 ### Финальная схема ответа (P1+ / полная)
 
