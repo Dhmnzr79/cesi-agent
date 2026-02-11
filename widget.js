@@ -98,8 +98,8 @@ document.addEventListener("DOMContentLoaded", () => {
     </div>
     <div id="botWidgetMsgs"></div>
     <div id="botWidgetForm">
-      <input id="botWidgetInput" placeholder="Напишите сообщение..." />
-      <button id="botWidgetSend">Отправить</button>
+      <textarea id="botWidgetInput" placeholder="Напишите сообщение..." rows="1"></textarea>
+      <button id="botWidgetSend" type="button">Отправить</button>
     </div>
   `;
   document.body.appendChild(box);
@@ -182,6 +182,50 @@ document.addEventListener("DOMContentLoaded", () => {
       widgetState.dialogState = 'collecting_contact';
     } else {
       widgetState.dialogState = 'normal';
+    }
+  }
+
+  function formatPhoneValue(value) {
+    let d = (value || '').replace(/\D/g, '');
+    if (d.startsWith('7') || d.startsWith('8')) d = d.slice(1);
+    d = d.slice(0, 10);
+    if (d.length === 0) return '';
+    if (d.length <= 3) return '+7 (' + d;
+    if (d.length <= 6) return '+7 (' + d.slice(0, 3) + ') ' + d.slice(3);
+    return '+7 (' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6, 8) + '-' + d.slice(8, 10);
+  }
+
+  function extractPhoneDigits(value) {
+    let d = (value || '').replace(/\D/g, '');
+    if (d.startsWith('7') || d.startsWith('8')) d = d.slice(1);
+    return d.slice(0, 10);
+  }
+
+  let phoneMaskHandler = null;
+
+  function updatePhoneMaskUI() {
+    const isPhone = widgetState.leadIntent === 'awaiting_phone' && !widgetState.leadSent;
+    if (isPhone) {
+      input.placeholder = '+7 (___) ___-__-__';
+      input.setAttribute('inputmode', 'tel');
+      input.setAttribute('autocomplete', 'tel');
+      if (!phoneMaskHandler) {
+        phoneMaskHandler = () => {
+          if (widgetState.leadIntent !== 'awaiting_phone') return;
+          const formatted = formatPhoneValue(input.value);
+          input.value = formatted;
+          input.setSelectionRange(formatted.length, formatted.length);
+        };
+        input.addEventListener('input', phoneMaskHandler);
+      }
+    } else {
+      input.placeholder = 'Напишите сообщение...';
+      input.removeAttribute('inputmode');
+      input.removeAttribute('autocomplete');
+      if (phoneMaskHandler) {
+        input.removeEventListener('input', phoneMaskHandler);
+        phoneMaskHandler = null;
+      }
     }
   }
 
@@ -308,6 +352,45 @@ document.addEventListener("DOMContentLoaded", () => {
   function hideStartMenu() {
     const el = msgs.querySelector('.botStartMenu');
     if (el) el.remove();
+  }
+
+  const TYPING_MAX_MS = 2000;
+  let typingTimeoutId = null;
+
+  function showTypingIndicator() {
+    hideTypingIndicator();
+    const el = document.createElement('div');
+    el.className = 'botTyping';
+    el.setAttribute('aria-live', 'polite');
+    el.innerHTML = '<span class="botTyping-dot"></span><span class="botTyping-dot"></span><span class="botTyping-dot"></span>';
+    msgs.appendChild(el);
+    msgs.scrollTop = msgs.scrollHeight;
+    typingTimeoutId = setTimeout(() => {
+      typingTimeoutId = null;
+      hideTypingIndicator();
+      setFormLoading(false);
+    }, TYPING_MAX_MS);
+  }
+
+  function hideTypingIndicator() {
+    if (typingTimeoutId) {
+      clearTimeout(typingTimeoutId);
+      typingTimeoutId = null;
+    }
+    const el = msgs.querySelector('.botTyping');
+    if (el) el.remove();
+  }
+
+  function setFormLoading(loading) {
+    if (loading) {
+      input.disabled = true;
+      send.disabled = true;
+      box.querySelector('#botWidgetForm').classList.add('is-loading');
+    } else {
+      input.disabled = widgetState.leadSent;
+      send.disabled = widgetState.leadSent;
+      box.querySelector('#botWidgetForm').classList.remove('is-loading');
+    }
   }
 
   // Подсказки при зависании: 1 показ за сессию
@@ -593,12 +676,15 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("scroll", maybeShowScrollTeaser);
 
   async function askFlowise(text) {
-    const sid = getOrCreateSessionId();
-    const res = await fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: text, overrideConfig: { sessionId: sid } })
-    });
+    setFormLoading(true);
+    showTypingIndicator();
+    try {
+      const sid = getOrCreateSessionId();
+      const res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: text, overrideConfig: { sessionId: sid } })
+      });
 
     if (!res.ok) {
       const t = await res.text();
@@ -615,7 +701,8 @@ document.addEventListener("DOMContentLoaded", () => {
     widgetState.leadIntent = parsed.leadIntent;
     widgetState.lastParsedResponse = parsed.isValid ? { flags: parsed.flags, ui: parsed.ui, meta: parsed.meta } : null;
     updateDialogState();
-    
+    updatePhoneMaskUI();
+
     // Сохраняем имя при переходе к запросу телефона
     if (parsed.isValid && parsed.leadIntent === 'awaiting_phone') {
       widgetState.leadName = text;
@@ -657,11 +744,23 @@ document.addEventListener("DOMContentLoaded", () => {
         renderCTAButton("booking");
       }
     }
+    } finally {
+      hideTypingIndicator();
+      setFormLoading(false);
+    }
   }
+
+  const SEND_DEBOUNCE_MS = 400;
+  let lastSendAt = 0;
 
   async function onSend() {
     const text = input.value.trim();
     if (!text) return;
+    if (box.querySelector('#botWidgetForm').classList.contains('is-loading')) return;
+    const now = Date.now();
+    if (now - lastSendAt < SEND_DEBOUNCE_MS) return;
+    lastSendAt = now;
+
     widgetState.hasInteracted = true;
     widgetState.messageCount++;
     hideStartMenu();
@@ -679,7 +778,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   send.onclick = onSend;
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") onSend();
+    if (e.key === "Enter") {
+      if (e.shiftKey) {
+        return;
+      }
+      e.preventDefault();
+      onSend();
+    }
   });
   input.addEventListener("input", () => {
     widgetState.lastInputAt = Date.now();

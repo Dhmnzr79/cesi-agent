@@ -403,6 +403,7 @@
   font-size: 14px;
   line-height: 1.35;
   white-space: pre-line;
+  animation: botMsgAppear 0.25s ease-out;
 }
 
 .botUser {
@@ -413,6 +414,60 @@
 .botBot {
   margin-right: auto;
   background: #f3f4f6;
+}
+
+@keyframes botMsgAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Typing-индикатор */
+.botTyping {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px;
+  margin-right: auto;
+  background: #f3f4f6;
+  border-radius: 10px;
+  max-width: fit-content;
+  animation: botMsgAppear 0.2s ease-out;
+}
+
+.botTyping-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #999;
+  animation: botTypingBounce 0.6s ease-in-out infinite;
+}
+
+.botTyping-dot:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.botTyping-dot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes botTypingBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+#botWidgetForm.is-loading #botWidgetInput,
+#botWidgetForm.is-loading #botWidgetSend {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 #botWidgetForm {
@@ -429,6 +484,10 @@
   border: 1px solid #ddd;
   border-radius: 10px;
   font-size: 14px;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  font-family: inherit;
 }
 
 #botWidgetSend {
