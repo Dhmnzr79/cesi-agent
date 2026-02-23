@@ -1,0 +1,866 @@
+{
+  "nodes": [
+    {
+      "id": "startAgentflow_0",
+      "type": "agentFlow",
+      "position": {
+        "x": -272,
+        "y": -36
+      },
+      "data": {
+        "id": "startAgentflow_0",
+        "label": "Start",
+        "version": 1.1,
+        "name": "startAgentflow",
+        "type": "Start",
+        "color": "#7EE787",
+        "hideInput": true,
+        "baseClasses": [
+          "Start"
+        ],
+        "category": "Agent Flows",
+        "description": "Starting point of the agentflow",
+        "inputParams": [
+          {
+            "label": "Input Type",
+            "name": "startInputType",
+            "type": "options",
+            "options": [
+              {
+                "label": "Chat Input",
+                "name": "chatInput",
+                "description": "Start the conversation with chat input"
+              },
+              {
+                "label": "Form Input",
+                "name": "formInput",
+                "description": "Start the workflow with form inputs"
+              }
+            ],
+            "default": "chatInput",
+            "id": "startAgentflow_0-input-startInputType-options",
+            "display": true
+          },
+          {
+            "label": "Form Title",
+            "name": "formTitle",
+            "type": "string",
+            "placeholder": "Please Fill Out The Form",
+            "show": {
+              "startInputType": "formInput"
+            },
+            "id": "startAgentflow_0-input-formTitle-string",
+            "display": false
+          },
+          {
+            "label": "Form Description",
+            "name": "formDescription",
+            "type": "string",
+            "placeholder": "Complete all fields below to continue",
+            "show": {
+              "startInputType": "formInput"
+            },
+            "id": "startAgentflow_0-input-formDescription-string",
+            "display": false
+          },
+          {
+            "label": "Form Input Types",
+            "name": "formInputTypes",
+            "description": "Specify the type of form input",
+            "type": "array",
+            "show": {
+              "startInputType": "formInput"
+            },
+            "array": [
+              {
+                "label": "Type",
+                "name": "type",
+                "type": "options",
+                "options": [
+                  {
+                    "label": "String",
+                    "name": "string"
+                  },
+                  {
+                    "label": "Number",
+                    "name": "number"
+                  },
+                  {
+                    "label": "Boolean",
+                    "name": "boolean"
+                  },
+                  {
+                    "label": "Options",
+                    "name": "options"
+                  }
+                ],
+                "default": "string"
+              },
+              {
+                "label": "Label",
+                "name": "label",
+                "type": "string",
+                "placeholder": "Label for the input"
+              },
+              {
+                "label": "Variable Name",
+                "name": "name",
+                "type": "string",
+                "placeholder": "Variable name for the input (must be camel case)",
+                "description": "Variable name must be camel case. For example: firstName, lastName, etc."
+              },
+              {
+                "label": "Add Options",
+                "name": "addOptions",
+                "type": "array",
+                "show": {
+                  "formInputTypes[$index].type": "options"
+                },
+                "array": [
+                  {
+                    "label": "Option",
+                    "name": "option",
+                    "type": "string"
+                  }
+                ]
+              }
+            ],
+            "id": "startAgentflow_0-input-formInputTypes-array",
+            "display": false
+          },
+          {
+            "label": "Ephemeral Memory",
+            "name": "startEphemeralMemory",
+            "type": "boolean",
+            "description": "Start fresh for every execution without past chat history",
+            "optional": true,
+            "id": "startAgentflow_0-input-startEphemeralMemory-boolean",
+            "display": true
+          },
+          {
+            "label": "Flow State",
+            "name": "startState",
+            "description": "Runtime state during the execution of the workflow",
+            "type": "array",
+            "optional": true,
+            "array": [
+              {
+                "label": "Key",
+                "name": "key",
+                "type": "string",
+                "placeholder": "Foo"
+              },
+              {
+                "label": "Value",
+                "name": "value",
+                "type": "string",
+                "placeholder": "Bar",
+                "optional": true
+              }
+            ],
+            "id": "startAgentflow_0-input-startState-array",
+            "display": true
+          },
+          {
+            "label": "Persist State",
+            "name": "startPersistState",
+            "type": "boolean",
+            "description": "Persist the state in the same session",
+            "optional": true,
+            "id": "startAgentflow_0-input-startPersistState-boolean",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "startInputType": "chatInput",
+          "formTitle": "",
+          "formDescription": "",
+          "formInputTypes": "",
+          "startEphemeralMemory": "",
+          "startState": [
+            {
+              "key": "current_topics",
+              "value": "\"\""
+            }
+          ],
+          "startPersistState": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "startAgentflow_0-output-startAgentflow",
+            "label": "Start",
+            "name": "startAgentflow"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 103,
+      "height": 66,
+      "selected": false,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": -272,
+        "y": -36
+      }
+    },
+    {
+      "id": "retrieverAgentflow_0",
+      "position": {
+        "x": -93.25,
+        "y": -91.5
+      },
+      "data": {
+        "id": "retrieverAgentflow_0",
+        "label": "Retriever",
+        "version": 1.1,
+        "name": "retrieverAgentflow",
+        "type": "Retriever",
+        "color": "#b8bedd",
+        "baseClasses": [
+          "Retriever"
+        ],
+        "category": "Agent Flows",
+        "description": "Retrieve information from vector database",
+        "inputParams": [
+          {
+            "label": "Knowledge (Document Stores)",
+            "name": "retrieverKnowledgeDocumentStores",
+            "type": "array",
+            "description": "Document stores to retrieve information from. Document stores must be upserted in advance.",
+            "array": [
+              {
+                "label": "Document Store",
+                "name": "documentStore",
+                "type": "asyncOptions",
+                "loadMethod": "listStores"
+              }
+            ],
+            "id": "retrieverAgentflow_0-input-retrieverKnowledgeDocumentStores-array",
+            "display": true
+          },
+          {
+            "label": "Retriever Query",
+            "name": "retrieverQuery",
+            "type": "string",
+            "placeholder": "Enter your query here",
+            "rows": 4,
+            "acceptVariable": true,
+            "id": "retrieverAgentflow_0-input-retrieverQuery-string",
+            "display": true
+          },
+          {
+            "label": "Output Format",
+            "name": "outputFormat",
+            "type": "options",
+            "options": [
+              {
+                "label": "Text",
+                "name": "text"
+              },
+              {
+                "label": "Text with Metadata",
+                "name": "textWithMetadata"
+              }
+            ],
+            "default": "text",
+            "id": "retrieverAgentflow_0-input-outputFormat-options",
+            "display": true
+          },
+          {
+            "label": "Update Flow State",
+            "name": "retrieverUpdateState",
+            "description": "Update runtime state during the execution of the workflow",
+            "type": "array",
+            "optional": true,
+            "acceptVariable": true,
+            "array": [
+              {
+                "label": "Key",
+                "name": "key",
+                "type": "asyncOptions",
+                "loadMethod": "listRuntimeStateKeys"
+              },
+              {
+                "label": "Value",
+                "name": "value",
+                "type": "string",
+                "acceptVariable": true,
+                "acceptNodeOutputAsVariable": true
+              }
+            ],
+            "id": "retrieverAgentflow_0-input-retrieverUpdateState-array",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "retrieverKnowledgeDocumentStores": [
+            {
+              "documentStore": "78393f2b-dfa5-46ae-b8bf-8f7baf360e6e:База ЦЭСИ"
+            }
+          ],
+          "retrieverQuery": "<p><span class=\"variable\" data-type=\"mention\" data-id=\"question\" data-label=\"question\">{{ question }}</span> </p>",
+          "outputFormat": "textWithMetadata",
+          "retrieverUpdateState": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "retrieverAgentflow_0-output-retrieverAgentflow",
+            "label": "Retriever",
+            "name": "retrieverAgentflow"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "type": "agentFlow",
+      "width": 131,
+      "height": 66,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -93.25,
+        "y": -91.5
+      },
+      "dragging": false
+    },
+    {
+      "id": "llmAgentflow_0",
+      "position": {
+        "x": 361.25,
+        "y": -102.5
+      },
+      "data": {
+        "id": "llmAgentflow_0",
+        "label": "LLM 0",
+        "version": 1.1,
+        "name": "llmAgentflow",
+        "type": "LLM",
+        "color": "#64B5F6",
+        "baseClasses": [
+          "LLM"
+        ],
+        "category": "Agent Flows",
+        "description": "Large language models to analyze user-provided inputs and generate responses",
+        "inputParams": [
+          {
+            "label": "Model",
+            "name": "llmModel",
+            "type": "asyncOptions",
+            "loadMethod": "listModels",
+            "loadConfig": true,
+            "id": "llmAgentflow_0-input-llmModel-asyncOptions",
+            "display": true
+          },
+          {
+            "label": "Messages",
+            "name": "llmMessages",
+            "type": "array",
+            "optional": true,
+            "acceptVariable": true,
+            "array": [
+              {
+                "label": "Role",
+                "name": "role",
+                "type": "options",
+                "options": [
+                  {
+                    "label": "System",
+                    "name": "system"
+                  },
+                  {
+                    "label": "Assistant",
+                    "name": "assistant"
+                  },
+                  {
+                    "label": "Developer",
+                    "name": "developer"
+                  },
+                  {
+                    "label": "User",
+                    "name": "user"
+                  }
+                ]
+              },
+              {
+                "label": "Content",
+                "name": "content",
+                "type": "string",
+                "acceptVariable": true,
+                "generateInstruction": true,
+                "rows": 4
+              }
+            ],
+            "id": "llmAgentflow_0-input-llmMessages-array",
+            "display": true
+          },
+          {
+            "label": "Enable Memory",
+            "name": "llmEnableMemory",
+            "type": "boolean",
+            "description": "Enable memory for the conversation thread",
+            "default": true,
+            "optional": true,
+            "id": "llmAgentflow_0-input-llmEnableMemory-boolean",
+            "display": true
+          },
+          {
+            "label": "Memory Type",
+            "name": "llmMemoryType",
+            "type": "options",
+            "options": [
+              {
+                "label": "All Messages",
+                "name": "allMessages",
+                "description": "Retrieve all messages from the conversation"
+              },
+              {
+                "label": "Window Size",
+                "name": "windowSize",
+                "description": "Uses a fixed window size to surface the last N messages"
+              },
+              {
+                "label": "Conversation Summary",
+                "name": "conversationSummary",
+                "description": "Summarizes the whole conversation"
+              },
+              {
+                "label": "Conversation Summary Buffer",
+                "name": "conversationSummaryBuffer",
+                "description": "Summarize conversations once token limit is reached. Default to 2000"
+              }
+            ],
+            "optional": true,
+            "default": "allMessages",
+            "show": {
+              "llmEnableMemory": true
+            },
+            "id": "llmAgentflow_0-input-llmMemoryType-options",
+            "display": true
+          },
+          {
+            "label": "Window Size",
+            "name": "llmMemoryWindowSize",
+            "type": "number",
+            "default": "20",
+            "description": "Uses a fixed window size to surface the last N messages",
+            "show": {
+              "llmMemoryType": "windowSize"
+            },
+            "id": "llmAgentflow_0-input-llmMemoryWindowSize-number",
+            "display": false
+          },
+          {
+            "label": "Max Token Limit",
+            "name": "llmMemoryMaxTokenLimit",
+            "type": "number",
+            "default": "2000",
+            "description": "Summarize conversations once token limit is reached. Default to 2000",
+            "show": {
+              "llmMemoryType": "conversationSummaryBuffer"
+            },
+            "id": "llmAgentflow_0-input-llmMemoryMaxTokenLimit-number",
+            "display": false
+          },
+          {
+            "label": "Input Message",
+            "name": "llmUserMessage",
+            "type": "string",
+            "description": "Add an input message as user message at the end of the conversation",
+            "rows": 4,
+            "optional": true,
+            "acceptVariable": true,
+            "show": {
+              "llmEnableMemory": true
+            },
+            "id": "llmAgentflow_0-input-llmUserMessage-string",
+            "display": true
+          },
+          {
+            "label": "Return Response As",
+            "name": "llmReturnResponseAs",
+            "type": "options",
+            "options": [
+              {
+                "label": "User Message",
+                "name": "userMessage"
+              },
+              {
+                "label": "Assistant Message",
+                "name": "assistantMessage"
+              }
+            ],
+            "default": "userMessage",
+            "id": "llmAgentflow_0-input-llmReturnResponseAs-options",
+            "display": true
+          },
+          {
+            "label": "JSON Structured Output",
+            "name": "llmStructuredOutput",
+            "description": "Instruct the LLM to give output in a JSON structured schema",
+            "type": "array",
+            "optional": true,
+            "acceptVariable": true,
+            "array": [
+              {
+                "label": "Key",
+                "name": "key",
+                "type": "string"
+              },
+              {
+                "label": "Type",
+                "name": "type",
+                "type": "options",
+                "options": [
+                  {
+                    "label": "String",
+                    "name": "string"
+                  },
+                  {
+                    "label": "String Array",
+                    "name": "stringArray"
+                  },
+                  {
+                    "label": "Number",
+                    "name": "number"
+                  },
+                  {
+                    "label": "Boolean",
+                    "name": "boolean"
+                  },
+                  {
+                    "label": "Enum",
+                    "name": "enum"
+                  },
+                  {
+                    "label": "JSON Array",
+                    "name": "jsonArray"
+                  }
+                ]
+              },
+              {
+                "label": "Enum Values",
+                "name": "enumValues",
+                "type": "string",
+                "placeholder": "value1, value2, value3",
+                "description": "Enum values. Separated by comma",
+                "optional": true,
+                "show": {
+                  "llmStructuredOutput[$index].type": "enum"
+                }
+              },
+              {
+                "label": "JSON Schema",
+                "name": "jsonSchema",
+                "type": "code",
+                "placeholder": "{\n    \"answer\": {\n        \"type\": \"string\",\n        \"description\": \"Value of the answer\"\n    },\n    \"reason\": {\n        \"type\": \"string\",\n        \"description\": \"Reason for the answer\"\n    },\n    \"optional\": {\n        \"type\": \"boolean\"\n    },\n    \"count\": {\n        \"type\": \"number\"\n    },\n    \"children\": {\n        \"type\": \"array\",\n        \"items\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"value\": {\n                    \"type\": \"string\",\n                    \"description\": \"Value of the children's answer\"\n                }\n            }\n        }\n    }\n}",
+                "description": "JSON schema for the structured output",
+                "optional": true,
+                "hideCodeExecute": true,
+                "show": {
+                  "llmStructuredOutput[$index].type": "jsonArray"
+                }
+              },
+              {
+                "label": "Description",
+                "name": "description",
+                "type": "string",
+                "placeholder": "Description of the key"
+              }
+            ],
+            "id": "llmAgentflow_0-input-llmStructuredOutput-array",
+            "display": true
+          },
+          {
+            "label": "Update Flow State",
+            "name": "llmUpdateState",
+            "description": "Update runtime state during the execution of the workflow",
+            "type": "array",
+            "optional": true,
+            "acceptVariable": true,
+            "array": [
+              {
+                "label": "Key",
+                "name": "key",
+                "type": "asyncOptions",
+                "loadMethod": "listRuntimeStateKeys"
+              },
+              {
+                "label": "Value",
+                "name": "value",
+                "type": "string",
+                "acceptVariable": true,
+                "acceptNodeOutputAsVariable": true
+              }
+            ],
+            "id": "llmAgentflow_0-input-llmUpdateState-array",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "llmModel": "chatOpenAI",
+          "llmMessages": [
+            {
+              "role": "system",
+              "content": "<p># System Prompt — чат-бот клиники ЦЭСИ</p><p>## 1. Роль и контекст</p><p>Ты — диалоговый AI-ассистент стоматологической клиники «ЦЭСИ».</p><p>Клиника находится в городе Елизово, Камчатский край.</p><p>Ты общаешься с потенциальными пациентами клиники и помогаешь им разобраться в вопросах лечения и дальнейших шагов.</p><p>Ты **не являешься врачом и администратором**.</p><p>---</p><p>## 2. Бизнес-цель</p><p>Твоя основная бизнес-цель — **получение лида для клиники**  </p><p>(запись на консультацию или передача контакта администратору).</p><p>Ты достигаешь этой цели **через помощь, разъяснение и снижение тревожности**,  </p><p>а не через прямые продажи или давление.</p><p>Ты отслеживаешь сигналы готовности пользователя  </p><p>(интерес к цене, срокам, порядку действий, врачу, дальнейшим шагам)  </p><p>и используешь их как логичный повод двигать диалог к записи.</p><p>---</p><p>## 3. Границы ответственности</p><p>Ты **НЕ**:</p><p>- управляешь интерфейсом</p><p>- показываешь кнопки</p><p>- запускаешь формы</p><p>- контролируешь сбор контактов</p><p>Ты **ФОРМИРУЕШЬ**:</p><p>- текст ответа пользователю</p><p>- аналитические рекомендации для системы</p><p>---</p><p>## 4. Приоритет базы знаний клиники</p><p>Информация из базы знаний клиники является **официально одобренной** для общения с пациентами.</p><p>Если формулировка, утверждение или оффер присутствуют в базе знаний,  </p><p>ты используешь их **без изменения смысла** и **без добавления собственных оговорок**.</p><p>Ты не противоречишь базе знаний и не ослабляешь её формулировки по собственной инициативе.</p><p>Если в базе знаний **нет ответа**, ты:</p><p>- честно говоришь, что уточнить можно у администратора/на консультации</p><p>- не придумываешь факты и не добавляешь «медицинские детали» от себя</p><p>- предлагаешь следующий логичный шаг (уточнить у администратора / записаться)</p><p>---</p><p>## 4.1. Список доступных подразделов (current_topics)</p><p>В контексте тебе доступен список доступных подразделов по текущему запросу (через запятую): **<span class=\"variable\" data-type=\"mention\" data-id=\"$flow.state.current_topics\" data-label=\"$flow.state.current_topics\">{{ $flow.state.current_topics }}</span>**. Это **единственный допустимый** список тем для предложения «рассказать подробнее» / «узнать про X».</p><p>- **Запрещено** предлагать продолжение по аспекту (этапы, кому подходит, ограничения, стоимость и т.п.), которого **нет** в этом списке. Не придумывай типичные стоматологические подразделы.</p><p>- Если <code>current_topics</code> пустой или отсутствует — ответь коротко, что по этому запросу информации в базе нет, и предложи переформулировать или обратиться к администратору; **не** импровизируй.</p><p>- **Memory Check:** по истории диалога в текущей сессии не предлагай подразделы, которые уже были раскрыты; предлагай только те, что есть в <code>current_topics</code> и ещё не обсуждались.</p><p>- Первый ответ по теме строй на основе раздела «Коротко» и при необходимости смежных данных из контекста. CTA по продолжению формулируй **только** по пунктам из <code>current_topics</code>. Если в списке нечего предложить — завершай ответ без предложения «рассказать подробнее».</p><p>---</p><p>## 5. Стиль общения</p><p>Обязательные характеристики:</p><p>- спокойный</p><p>- человечный</p><p>- вежливый</p><p>- уверенный</p><p>Запрещено:</p><p>- давление</p><p>- прямые продажи</p><p>- панибратство</p><p>- заигрывания</p><p>- инфантильный или чрезмерно заботливый тон</p><p>Эмпатия используется как элемент диалога,  </p><p>а не как психологическая поддержка.</p><p>---</p><p>## 6. Приоритет услуг</p><p>### Приоритетные направления</p><p>- имплантация</p><p>- протезирование</p><p>По этим темам допускается умеренно углублённый диалог  </p><p>**строго в рамках базы знаний**.</p><p>### Низкоприоритетные услуги</p><p>(кариес, отбеливание, гигиена и т.п.):</p><p>- отвечай кратко</p><p>- не углубляйся</p><p>- при попытке полноценной консультации рекомендуй обращение к администратору</p><p>---</p><p>## 7. Логика ведения диалога</p><p>- диалог ведётся пошагово</p><p>- информация даётся дозированно</p><p>- используются короткие абзацы и понятные формулировки</p><p>- **Не более одного смыслового вопроса пользователю за ответ, кроме режима сбора контактов.** В режиме записи <code>leadIntent</code> не <code>\"none\"</code>) приоритет у правил блока 13.</p><p>**Правило микро-шага:** следующий шаг формулируется как небольшое добровольное действие, а не обязательство. Допустимо: «Если хотите, могу…», «Могу подсказать…», «Могу коротко объяснить…». Запрещено: «Оставьте номер», «Вам нужно записаться» и т.п.</p><p>**Правило контроля:** подчёркивай, что решение остаётся за пользователем. Примеры: «как вам удобнее», «если будет актуально», «без обязательств».</p><p>**Правило движения диалога:** в каждом ответе (кроме исключений ниже) должен быть мягкий «вектор продолжения»: либо один уточняющий вопрос, либо приглашение продолжить без вопроса («Если хотите, могу рассказать подробнее про …»), либо мини-CTA в тексте. Вектор продолжения не должен провоцировать углублённую медицинскую консультацию; если пользователь уходит в серию сложных вопросов, приоритет у правил блока ограничений (rules.md). **Исключения:** режим записи — только вопросы по блоку 13; низкий confidence (&lt;0.4) — нейтрально, без инициативы; при <code>emotional = true</code> допускается отсутствие инициативного продолжения, если это соответствует замедленному режиму; флуд/оффтоп/конфликт — по rules.md.</p><p>Если пользователь задаёт вопросы:</p><p>- отвечай по существу</p><p>- при возможности мягко предлагай логичное продолжение темы</p><p>---</p><p>## 8. Работа с тревогой и сомнениями</p><p>Для чувствительных тем  </p><p>(боль, риски, приживаемость, цена, осложнения):</p><p>1. Коротко признай переживание пользователя</p><p>2. Дай аккуратное пояснение по сути вопроса</p><p>3. Мягко предложи продолжить диалог</p><p>---</p><p>## 9. Работа с симптомами</p><p>Если пользователь описывает симптомы или состояние  </p><p>(боль, дискомфорт, кровоточивость, проблемы с имплантом):</p><p>- допускается **один уточняющий вопрос**</p><p>- вопрос не содержит медицинских терминов</p><p>- вопрос не направлен на постановку диагноза</p><p>- допустимые типы уточнений:</p><p>  - длительность</p><p>  - изменение со временем</p><p>  - общий характер ситуации</p><p>---</p><p>## 10. Эмоциональное состояние</p><p><code>emotional = true</code> — это режим замедленного диалога.</p><p>Если <code>emotional = true</code>, ты обязан:</p><p>- не ускорять диалог</p><p>- не подталкивать к решениям</p><p>- давать больше пояснений, меньше инициативы</p><p>- использовать спокойные, поддерживающие формулировки</p><p>При <code>emotional = true</code>:</p><p>- ты НЕ предлагаешь запись первым</p><p>- ты НЕ усиливаешь давление даже при высоком confidence</p><p>Исключение:</p><p>- пользователь сам инициирует запись</p><p>- <code>confidence</code> не низкий</p><p>---</p><p>## 11. Рекомендация записи</p><p><code>booking</code> — это **рекомендация следующего шага**, а не действие.</p><p>Ты можешь установить <code>ui_ctaIntent = \"booking\"</code> только если:</p><p>- <code>stage = ready</code></p><p>ИЛИ</p><p>- <code>stage = interest</code> И инициатива исходит от пользователя</p><p>Дополнительные условия:</p><p>- <code>confidence</code> не низкий</p><p>- при <code>emotional = true</code> формулировка должна быть особенно мягкой</p><p>**Важно:** <code>ui_ctaIntent = \"booking\"</code> ставь **только** когда в твоём ответе есть **прямое предложение записаться** (например: «Записаться на консультацию?», «Можем записать вас на приём»). Если в ответе только предложение **продолжить тему** («Могу рассказать подробнее про…», «Хотите узнать про этапы?») — ставь <code>ui_ctaIntent = \"none\"</code>, чтобы виджет не показывал кнопку записи и не трактовал последующее «Да» как согласие на запись.</p><p>Если пользователь уже выразил намерение записаться — применяй правила блока 13 (переход к сбору контактов), а <code>ui_ctaIntent</code> ставь <code>\"none\"</code>.</p><p>При рекомендации записи формулируй её как микро-решение и краткий результат консультации, без обещаний лечения. Пример: «На консультации врач оценит ситуацию и вы получите понятный план лечения».</p><p>---</p><p>## 12. Confidence</p><p><code>confidence</code> отражает уровень уверенности формулировок и инициативы.</p><p><code>confidence</code> **НЕ определяет**, можно или нельзя отвечать.  </p><p>Он определяет **КАК ты говоришь** и **КТО инициирует следующий шаг**.</p><p>---</p><p>### Низкий confidence <code>confidence &lt; 0.4</code>)</p><p>Ты обязан:</p><p>- отвечать нейтрально и осторожно</p><p>- ограничиваться разъяснением по существу вопроса</p><p>- избегать выводов и рекомендаций</p><p>Запрещено:</p><p>- предлагать запись первым</p><p>- подводить к консультации</p><p>- усиливать инициативу со своей стороны</p><p>Допустимо:</p><p>- отвечать на прямые вопросы пользователя</p><p>- продолжать диалог, если пользователь сам его ведёт</p><p>---</p><p>### Средний confidence <code>0.4 ≤ confidence &lt; 0.7</code>)</p><p>Ты можешь:</p><p>- аккуратно обозначать возможный следующий шаг</p><p>- использовать нейтральные формулировки продолжения диалога</p><p>Допустимые формулировки:</p><p>- «если будет актуально»</p><p>- «при желании можно продолжить»</p><p>- «могу рассказать подробнее»</p><p>Ограничения:</p><p>- ты не предлагаешь запись напрямую</p><p>- ты не инициируешь консультацию первым</p><p>---</p><p>### Высокий confidence <code>confidence ≥ 0.7</code>)</p><p>Ты можешь:</p><p>- говорить уверенно и спокойно</p><p>- логично подводить к записи на консультацию</p><p>- предлагать следующий шаг без давления</p><p>Ограничения:</p><p>- формулировки остаются ненавязчивыми</p><p>- при <code>emotional = true</code> инициативу следует снижать и использовать более мягкий тон</p><p>---</p><p>### Ключевое правило</p><p>- <code>confidence</code> управляет **степенью инициативы и уверенности**</p><p>- инициатива пользователя всегда имеет приоритет над значением <code>confidence</code></p><p>- окончательное решение о записи принимает система</p><p>---</p><p>## 13. Режим записи (диалоговый)</p><p>**Правило записи (блок 13) имеет приоритет над правилами <code>emotional/confidence/stage</code>.**</p><p>### Роль и границы</p><p>Режим записи — это особый режим диалога, в котором ты управляешь порядком вопросов, но не владеешь и не обрабатываешь данные.</p><p>**Запись — это не тема для диалога. Это переключение режима.**</p><p>Ты **НЕ**:</p><p>* хранишь имя или телефон</p><p>* валидируешь данные</p><p>* отправляешь заявку</p><p>* подтверждаешь, что заявка отправлена</p><p>Эти действия выполняет виджет. Твоя роль — диалоговая.</p><p>---</p><p>### Переход в режим записи</p><p>Ты переходишь в режим записи немедленно, если пользователь явно выражает намерение записаться, включая формулировки:</p><p>* «хочу записаться»</p><p>* «давайте запишемся»</p><p>* «запишите меня»</p><p>* «я готов»</p><p>* «можно записаться»</p><p>* «как записаться»</p><p>* «оставлю номер»</p><p>**Короткие ответы («да», «ок», «хорошо») НЕ являются намерением записаться**, если в предыдущем сообщении ассистента не было прямого предложения записи (например: «Записаться на консультацию?», «Хотите записаться?»). Если пользователь ответил «Да» на предложение продолжить тему («Могу рассказать подробнее…», «Хотите узнать про…») — это согласие продолжить разговор; запись не запускается, <code>leadIntent</code> остаётся <code>\"none\"</code>.</p><p>**Устанавливай <code>leadIntent</code> не <code>\"none\"</code> только если:** (1) пользователь явно говорит о записи/контактах (формулировки выше), или (2) пользователь подтверждает прямое предложение записи в твоём последнем сообщении («Записаться на консультацию?» → «Да»). Во всех остальных случаях: <code>leadIntent = \"none\"</code>.</p><p>Контекст, стадия диалога и эмоциональное состояние не блокируют переход при явном намерении.</p><p>**Допустимо:** 0 или 1 уточняющий вопрос перед переходом, только если он действительно необходим. После этого — сразу первый вопрос для записи.</p><p>---</p><p>### Поведение в режиме записи</p><p>В режиме записи ты:</p><p>* не обсуждаешь условия</p><p>* не объясняешь процесс</p><p>* не предлагаешь альтернатив</p><p>* не возвращаешься к консультации</p><p>Ты только задаёшь вопросы для записи.</p><p>---</p><p>### Порядок вопросов (обязателен)</p><p>Вопросы задаются строго по порядку, по одному за сообщение:</p><p>1. Вопрос об имени</p><p>2. После получения имени — вопрос о телефоне</p><p>Запрещено:</p><p>* менять порядок</p><p>* задавать два вопроса в одном сообщении</p><p>* пропускать шаги</p><p>* спрашивать телефон до получения имени</p><p>---</p><p>### Абсолютные запреты в режиме записи</p><p>Запрещено всегда:</p><p>* спрашивать дату или время консультации</p><p>* обсуждать расписание</p><p>* подтверждать отправку заявки</p><p>* говорить «заявка отправлена», «мы получили ваши данные»</p><p>* обсуждать, что будет дальше после записи</p><p>Также запрещено в момент записи:</p><p>* рассказывать, как проходит консультация</p><p>* описывать способы записи</p><p>* задавать вопросы «на интерес»</p><p>Ты не знаешь, были ли данные успешно отправлены. У бота нет доступа к расписанию врачей и подтверждённой доступности.</p><p>---</p><p>### Завершение режима записи</p><p>После вопроса о телефоне:</p><p>* ты не делаешь выводов</p><p>* не подтверждаешь результат</p><p>* не интерпретируешь статус заявки</p><p>Дальнейшие сообщения определяются виджетом.</p><p>---</p><p>## 14. Формат ответа (обязательный)</p><p>Результатом каждого ответа является **JSON**.</p><p>JSON — основной результат твоей работы.</p><p>Поле <code>answer</code> — текст ответа пользователю.  </p><p>Остальные поля — аналитика для системы.</p><p>**P0:** используется минимальная схема ниже. Расширенные поля <code>showCTA</code>, <code>ctaText</code>, <code>intent</code>, <code>shouldHandoff</code> и т.д.) относятся к P1+ и описаны в <code>cta.md</code>](cta.md). Настройка LLM‑ноды Flowise под эту схему описана в <code>flowise.md</code> (§3.1).</p><p>**Никакого текста вне JSON.**  </p><p>**Не оборачивай JSON в ``` и не добавляй комментарии.**</p><p>**Все поля JSON обязательны.** Плоская структура (Flowise JSON Structured Output). Значения по умолчанию:  </p><p><code>ui_ctaIntent: \"none\"</code>, <code>meta_stage: \"discovery\"</code>, <code>meta_confidence: 0.0</code>, <code>flags_emotional: false</code>, <code>leadIntent: \"none\"</code>, <code>meta_shouldHandoff: false</code>.</p><p><code>meta_confidence</code> всегда число с точкой (например <code>0.6</code>).</p><p><code>ui_ctaIntent</code> всегда только <code>\"booking\"</code> или <code>\"none\"</code>.</p><p><code>meta_shouldHandoff</code> — рекомендация передать диалог администратору (boolean). Используется при: сложных или неоднозначных медицинских вопросах; серии углублённых теоретических вопросов; спорных или конфликтных ситуациях; отсутствии точного ответа в базе знаний; когда безопаснее передать человеку. Это рекомендация для системы, а не прямое действие. По умолчанию: <code>false</code>.</p><p><code>leadIntent</code> — режим записи для виджета (он отправляет заявку на backend):</p><p>* <code>none</code> — обычный диалог, не в режиме записи</p><p>* <code>awaiting_name</code> — ты только что спросил имя (первый вопрос для записи)</p><p>* <code>awaiting_phone</code> — ты получил имя и спросил телефон; предыдущее сообщение пользователя — имя</p><p>* <code>complete</code> — ты получил телефон; оба контакта собраны, виджет отправит заявку</p><p>В режиме записи <code>leadIntent</code> не <code>none</code>) ставь <code>ui_ctaIntent: \"none\"</code> — кнопка CTA не показывается.</p><p>**Когда устанавливать <code>meta_shouldHandoff = true</code>:**</p><p>1) Пользователь описывает сложное состояние: беременность + заболевания, системные болезни, диабет + имплантация, сложные медицинские сочетания  </p><p>2) Пользователь задаёт 3+ углублённых теоретических вопросов подряд  </p><p>3) Нет ответа в базе знаний и требуется уточнение  </p><p>4) Пользователь спорит или уходит в конфликт  </p><p>5) Вопрос требует индивидуальной оценки врача  </p><p>Во всех остальных случаях: <code>meta_shouldHandoff = false</code>.</p><p>```json</p><p>{</p><p>  \"answer\": \"Текст ответа пользователю\",</p><p>  \"ui_ctaIntent\": \"booking\",</p><p>  \"meta_stage\": \"ready\",</p><p>  \"meta_confidence\": 0.82,</p><p>  \"flags_emotional\": false,</p><p>  \"leadIntent\": \"none\",</p><p>  \"meta_shouldHandoff\": false</p><p>}</p><p>```</p><p>---</p><p>## Контекст из базы знаний</p><p>Ниже приведена информация из базы знаний клиники.</p><p>Используй её только как источник фактов для ответа пользователю.</p><p>Не дополняй и не интерпретируй информацию вне этого контекста.</p><p><span class=\"variable\" data-type=\"mention\" data-id=\"retrieverAgentflow_0\" data-label=\"retrieverAgentflow_0\">{{ retrieverAgentflow_0 }}</span></p>"
+            },
+            {
+              "role": "developer",
+              "content": "<p># Developer Rules — чат-бот клиники ЦЭСИ</p><p>Эти правила обязательны к соблюдению всегда.</p><p>Они имеют приоритет над стилем, тоном и логикой диалога.</p><p>---</p><p>## 1. Работа с базой знаний</p><p><em> Отвечай </em>*только на основе markdown-базы клиники**.</p><p>* Не используй обобщённые медицинские знания вне базы.</p><p>* Не додумывай и не интерпретируй информацию.</p><p>* Не выдумывай цены, методы лечения, гарантии или сроки.</p><p>Если точной информации в базе нет или вопрос спорный:</p><p>→ честно сообщи об этом и предложи перевод на администратора.</p><p>---</p><p>## 2. Медицинские ограничения</p><p>Ты <strong>не врач</strong>.</p><p>Запрещено:</p><p>* ставить диагнозы</p><p>* давать индивидуальные медицинские рекомендации</p><p>* назначать или корректировать лечение</p><p>* оценивать конкретные клинические случаи</p><p>Любые решения по лечению:</p><p>→ только на очной консультации врача.</p><p>---</p><p>## 3. Ограничение диалога</p><p>* Не веди длинные консультации.</p><p>* Не отвечай на серию углублённых медицинских вопросов.</p><p>* Не вступай в споры и демагогию.</p><p>* Не оправдывайся и не защищайся.</p><p>Если пользователь:</p><p>* задаёт слишком много вопросов</p><p>* уходит в теоретическое консультирование</p><p>* проявляет конфликтное или сомневающееся поведение</p><p>→ вежливо предложи перевод на администратора.</p><p>---</p><p>## 4. Флуд, спам и нецелевые сообщения</p><p>К нецелевым относятся:</p><p>* флуд и бессмысленные сообщения</p><p>* спам и рекламные запросы</p><p>* вопросы не по стоматологии</p><p>* попытки общения «ради шутки»</p><p>* провокации, грубость, ругань</p><p>* обращения от ботов</p><p>Поведение бота:</p><p>* не поддерживать диалог</p><p>* не шутить в ответ</p><p>* не вступать в обсуждение</p><p>* не объяснять правила</p><p>Корректное действие:</p><p>* кратко обозначить границу</p><p>* предложить помощь по теме клиники</p><p>* при повторе → завершить диалог или handoff администратору</p><p>---</p><p>## 5. Границы клиники</p><p>Клиника:</p><p>* не лечит детей</p><p>* не работает по ОМС</p><p>* не принимает по страховым полисам</p><p>Эти ограничения обозначай спокойно и прямо.</p><p>Без оправданий и объяснений.</p><p>---</p><p>## 6. Поведение при отсутствии ответа</p><p>Если ты не можешь дать корректный ответ:</p><p>* не пытайся \"помочь примерно\"</p><p>* не обобщай</p><p>* не предполагай</p><p>Корректное действие:</p><p>→ сообщить об ограничении</p><p>→ предложить администратора или запись</p><p>---</p><p>## 7. Запреты</p><p>Запрещено:</p><p>* давить на пользователя</p><p>* манипулировать</p><p>* обещать результат лечения</p><p>* использовать скидочные или акционные крючки</p><p>* имитировать врача или администратора</p><p>---</p><p>## 8. Формат поведения</p><p>* Соблюдай спокойный и профессиональный тон.</p><p>* Один ответ — не более одного вопроса.</p><p>* Не используй медицинский жаргон.</p><p>* Не выходи за рамки своей роли.</p><p>---</p><p>## Ключевой принцип</p><p>Если возникает сомнение, как ответить:</p><p>→ выбери более безопасный вариант</p><p>→ сократи ответ</p><p>→ предложи handoff человеку.</p><p></p>"
+            }
+          ],
+          "llmEnableMemory": true,
+          "llmMemoryType": "allMessages",
+          "llmUserMessage": "<p>Контекст:</p><p><span class=\"variable\" data-type=\"mention\" data-id=\"retrieverAgentflow_0\" data-label=\"retrieverAgentflow_0\">{{ retrieverAgentflow_0 }}</span> </p><p>Доступные темы: <span class=\"variable\" data-type=\"mention\" data-id=\"$flow.state.current_topics\" data-label=\"$flow.state.current_topics\">{{ $flow.state.current_topics }}</span></p><p>Вопрос: <span class=\"variable\" data-type=\"mention\" data-id=\"question\" data-label=\"question\">{{ question }}</span></p>",
+          "llmReturnResponseAs": "userMessage",
+          "llmStructuredOutput": [
+            {
+              "key": "answer",
+              "type": "string",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Текст ответа пользователю."
+            },
+            {
+              "key": "ui_ctaIntent",
+              "type": "string",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Только \"booking\" или \"none\". Рекомендация показа кнопки «Записаться»; при режиме записи всегда \"none\"."
+            },
+            {
+              "key": "meta_stage",
+              "type": "string",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Стадия диалога: discovery | interest | ready | objection"
+            },
+            {
+              "key": "meta_confidence",
+              "type": "number",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Уверенность модели в классификации (0.0–1.0), например 0.82."
+            },
+            {
+              "key": "flags_emotional",
+              "type": "boolean",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Эмоционально напряжённое состояние пользователя (тревога и т.п.)."
+            },
+            {
+              "key": "leadIntent",
+              "type": "string",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Режим лида для виджета: none | awaiting_phone | complete"
+            },
+            {
+              "key": "meta_shouldHandoff",
+              "type": "boolean",
+              "enumValues": "",
+              "jsonSchema": "",
+              "description": "Рекомендация передать диалог администратору. true — если вопрос сложный, медицинский или требует очной консультации."
+            }
+          ],
+          "llmUpdateState": "",
+          "llmModelConfig": {
+            "cache": "",
+            "modelName": "gpt-4o-mini",
+            "temperature": "0.3",
+            "streaming": true,
+            "maxTokens": "",
+            "topP": "",
+            "frequencyPenalty": "",
+            "presencePenalty": "",
+            "timeout": "",
+            "strictToolCalling": "",
+            "stopSequence": "",
+            "basepath": "",
+            "proxyUrl": "",
+            "baseOptions": "",
+            "allowImageUploads": "",
+            "reasoning": "",
+            "llmModel": "chatOpenAI"
+          },
+          "undefined": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "llmAgentflow_0-output-llmAgentflow",
+            "label": "LLM",
+            "name": "llmAgentflow"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "type": "agentFlow",
+      "width": 175,
+      "height": 72,
+      "selected": false,
+      "dragging": false,
+      "positionAbsolute": {
+        "x": 361.25,
+        "y": -102.5
+      }
+    },
+    {
+      "id": "customFunctionAgentflow_0",
+      "position": {
+        "x": 93.625,
+        "y": -9.75
+      },
+      "data": {
+        "id": "customFunctionAgentflow_0",
+        "label": "Custom Function 0",
+        "version": 1.1,
+        "name": "customFunctionAgentflow",
+        "type": "CustomFunction",
+        "color": "#E4B7FF",
+        "baseClasses": [
+          "CustomFunction"
+        ],
+        "category": "Agent Flows",
+        "description": "Execute custom function",
+        "inputParams": [
+          {
+            "label": "Input Variables",
+            "name": "customFunctionInputVariables",
+            "description": "Input variables can be used in the function with prefix $. For example: $foo",
+            "type": "array",
+            "optional": true,
+            "acceptVariable": true,
+            "array": [
+              {
+                "label": "Variable Name",
+                "name": "variableName",
+                "type": "string"
+              },
+              {
+                "label": "Variable Value",
+                "name": "variableValue",
+                "type": "string",
+                "acceptVariable": true
+              }
+            ],
+            "id": "customFunctionAgentflow_0-input-customFunctionInputVariables-array",
+            "display": true
+          },
+          {
+            "label": "Javascript Function",
+            "name": "customFunctionJavascriptFunction",
+            "type": "code",
+            "codeExample": "/*\n* You can use any libraries imported in Flowise\n* You can use properties specified in Input Variables with the prefix $. For example: $foo\n* You can get default flow config: $flow.sessionId, $flow.chatId, $flow.chatflowId, $flow.input, $flow.state\n* You can get global variables: $vars.<variable-name>\n* Must return a string value at the end of function\n*/\n\nconst fetch = require('node-fetch');\nconst url = 'https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current_weather=true';\nconst options = {\n    method: 'GET',\n    headers: {\n        'Content-Type': 'application/json'\n    }\n};\ntry {\n    const response = await fetch(url, options);\n    const text = await response.text();\n    return text;\n} catch (error) {\n    console.error(error);\n    return '';\n}",
+            "description": "The function to execute. Must return a string or an object that can be converted to a string.",
+            "id": "customFunctionAgentflow_0-input-customFunctionJavascriptFunction-code",
+            "display": true
+          },
+          {
+            "label": "Update Flow State",
+            "name": "customFunctionUpdateState",
+            "description": "Update runtime state during the execution of the workflow",
+            "type": "array",
+            "optional": true,
+            "acceptVariable": true,
+            "array": [
+              {
+                "label": "Key",
+                "name": "key",
+                "type": "asyncOptions",
+                "loadMethod": "listRuntimeStateKeys"
+              },
+              {
+                "label": "Value",
+                "name": "value",
+                "type": "string",
+                "acceptVariable": true,
+                "acceptNodeOutputAsVariable": true
+              }
+            ],
+            "id": "customFunctionAgentflow_0-input-customFunctionUpdateState-array",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "customFunctionInputVariables": [
+            {
+              "variableName": "retrieverOutput",
+              "variableValue": "<p><span class=\"variable\" data-type=\"mention\" data-id=\"retrieverAgentflow_0\" data-label=\"retrieverAgentflow_0\">{{ retrieverAgentflow_0 }}</span> </p>"
+            }
+          ],
+          "customFunctionJavascriptFunction": "/**\n * Custom Function Node для AgentFlow V2.\n * Извлекает заголовки ### из выхода Retriever, группирует по теме, возвращает строку через запятую для Flow State (current_topics).\n * В Flowise: Input Variable retrieverOutput = {{ RetrieverId.output }}, Update Flow State: current_topics = output этой ноды.\n * Возвращаем простую строку (не JSON), чтобы избежать двойной упаковки в state.\n */\n\n// Вход: выход одной ноды Retriever (строка или массив документов с pageContent и metadata)\nvar raw = typeof $retrieverOutput !== 'undefined' ? $retrieverOutput : '';\n\nvar currentTopics = {};\n\nfunction getTopicName(metadata) {\n  if (!metadata) return 'Контекст';\n  var src = metadata.source || metadata.fileName || metadata.file_path || '';\n  if (typeof src !== 'string') return 'Контекст';\n  var name = src.split(/[/\\\\]/).pop().replace(/\\.md$/i, '') || 'Контекст';\n  // Опционально: человекочитаемые названия по префиксу\n  if (name.startsWith('impl__type_all-on-4')) return 'Имплантация All-on-4';\n  if (name.startsWith('impl__type_all-on-6')) return 'Имплантация All-on-6';\n  if (name.startsWith('impl__type_classic')) return 'Классическая имплантация';\n  if (name.startsWith('impl__type_one_stage')) return 'Одномоментная имплантация';\n  if (name.startsWith('impl__')) return 'Имплантация';\n  if (name.startsWith('clinic__consultation')) return 'Консультация';\n  if (name.startsWith('clinic__')) return 'Клиника';\n  if (name.startsWith('doctor__')) return 'Врачи';\n  if (name.startsWith('faq__')) return 'Вопросы и ответы';\n  if (name.startsWith('price')) return 'Стоимость';\n  return name.replace(/__/g, ' ');\n}\n\nfunction extractH3(text) {\n  if (typeof text !== 'string') return [];\n  var re = /^###\\s*(.+)$/gm;\n  var out = [];\n  var m;\n  while ((m = re.exec(text)) !== null) {\n    var title = m[1].trim();\n    if (!title) continue;\n    if (/^коротко$/i.test(title)) continue;\n    out.push(title);\n  }\n  return out;\n}\n\nfunction addSections(topic, sections) {\n  if (!currentTopics[topic]) currentTopics[topic] = [];\n  sections.forEach(function (s) {\n    if (currentTopics[topic].indexOf(s) === -1) currentTopics[topic].push(s);\n  });\n}\n\ntry {\n  if (raw !== null && raw !== undefined && raw !== '') {\n    if (typeof raw === 'string') {\n      var sections = extractH3(raw);\n      if (sections.length) addSections('Контекст', sections);\n    } else if (Array.isArray(raw)) {\n      for (var i = 0; i < raw.length; i++) {\n        var doc = raw[i];\n        var text = doc.pageContent || doc.content || doc.text || (typeof doc === 'string' ? doc : '');\n        var meta = doc.metadata || doc.meta || {};\n        var topic = getTopicName(meta);\n        var sections = extractH3(text);\n        if (sections.length) addSections(topic, sections);\n      }\n    } else {\n      var list = raw.documents || raw.chunks || raw.results;\n      if (Array.isArray(list)) {\n        for (var j = 0; j < list.length; j++) {\n          var d = list[j];\n          var t = d.pageContent || d.content || d.text || (typeof d === 'string' ? d : '');\n          var m = d.metadata || d.meta || {};\n          var top = getTopicName(m);\n          var sec = extractH3(t);\n          if (sec.length) addSections(top, sec);\n        }\n      }\n    }\n  }\n} catch (e) {\n  currentTopics = {};\n}\n\n// Одна строка через запятую — без JSON, чтобы не было двойной упаковки в state\nvar allTitles = [];\nfor (var key in currentTopics) {\n  allTitles = allTitles.concat(currentTopics[key]);\n}\nif (allTitles.length === 0) {\n  return '';\n}\nreturn allTitles.join(', ');\n",
+          "customFunctionUpdateState": [
+            {
+              "key": "current_topics",
+              "value": "<p><span class=\"variable\" data-type=\"mention\" data-id=\"output\" data-label=\"output\">{{ output }}</span> </p>"
+            }
+          ]
+        },
+        "outputAnchors": [
+          {
+            "id": "customFunctionAgentflow_0-output-customFunctionAgentflow",
+            "label": "Custom Function",
+            "name": "customFunctionAgentflow"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "type": "agentFlow",
+      "width": 195,
+      "height": 66,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 93.625,
+        "y": -9.75
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "startAgentflow_0",
+      "sourceHandle": "startAgentflow_0-output-startAgentflow",
+      "target": "retrieverAgentflow_0",
+      "targetHandle": "retrieverAgentflow_0",
+      "data": {
+        "sourceColor": "#7EE787",
+        "targetColor": "#b8bedd",
+        "isHumanInput": false
+      },
+      "type": "agentFlow",
+      "id": "startAgentflow_0-startAgentflow_0-output-startAgentflow-retrieverAgentflow_0-retrieverAgentflow_0"
+    },
+    {
+      "source": "retrieverAgentflow_0",
+      "sourceHandle": "retrieverAgentflow_0-output-retrieverAgentflow",
+      "target": "customFunctionAgentflow_0",
+      "targetHandle": "customFunctionAgentflow_0",
+      "data": {
+        "sourceColor": "#b8bedd",
+        "targetColor": "#E4B7FF",
+        "isHumanInput": false
+      },
+      "type": "agentFlow",
+      "id": "retrieverAgentflow_0-retrieverAgentflow_0-output-retrieverAgentflow-customFunctionAgentflow_0-customFunctionAgentflow_0"
+    },
+    {
+      "source": "customFunctionAgentflow_0",
+      "sourceHandle": "customFunctionAgentflow_0-output-customFunctionAgentflow",
+      "target": "llmAgentflow_0",
+      "targetHandle": "llmAgentflow_0",
+      "data": {
+        "sourceColor": "#E4B7FF",
+        "targetColor": "#64B5F6",
+        "isHumanInput": false
+      },
+      "type": "agentFlow",
+      "id": "customFunctionAgentflow_0-customFunctionAgentflow_0-output-customFunctionAgentflow-llmAgentflow_0-llmAgentflow_0"
+    }
+  ]
+}
